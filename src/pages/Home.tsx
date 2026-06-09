@@ -2,7 +2,17 @@ import { motion } from "framer-motion";
 
 export function Home() {
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center">
+    <div className="min-h-screen bg-black flex items-center justify-center relative overflow-hidden">
+      {/* Tepada sekin yuruvchi yozuv */}
+      <motion.div
+        className="absolute top-8 whitespace-nowrap text-gray-700 text-sm md:text-base lg:text-lg font-mono tracking-wider"
+        animate={{ x: ["100vw", "-100%"] }}
+        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+      >
+        Test rejimida ishlamoqda idealariz bolsa ayting
+      </motion.div>
+
+      {/* Asosiy 404 */}
       <motion.div
         initial={{ opacity: 0, scale: 0.5 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -11,22 +21,27 @@ export function Home() {
       >
         <motion.h1
           animate={{ 
-            x: [-5, 5, -5, 5, 0],
-            rotate: [-2, 2, -2, 2, 0]
+            x: [-3, 3, -3, 3, 0],
+            rotate: [-1, 1, -1, 1, 0]
           }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="text-7xl md:text-8xl lg:text-9xl font-bold text-white mb-4"
+          className="text-8xl md:text-9xl lg:text-[200px] font-bold text-white tracking-tighter"
         >
           404
         </motion.h1>
-        <motion.p
+
+        {/* Telegram link */}
+        <motion.a
+          href="https://t.me/erkinovziyodullo"
+          target="_blank"
+          rel="noopener noreferrer"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          className="text-xl md:text-2xl text-gray-400"
+          transition={{ duration: 0.5, delay: 0.6 }}
+          className="inline-block mt-8 px-6 py-2 text-gray-500 hover:text-white text-sm md:text-base border border-gray-700 rounded-full hover:border-gray-500 transition-all duration-300"
         >
-          not found
-        </motion.p>
+          📱 Murojat uchun
+        </motion.a>
       </motion.div>
     </div>
   );
