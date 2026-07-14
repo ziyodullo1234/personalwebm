@@ -1,121 +1,103 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { 
-  Calendar, 
-  MapPin, 
+import {
+  Calendar,
+  MapPin,
   Code2,
   Sparkles,
   ChevronLeft,
   ChevronRight,
-  Award,
-  Star
 } from "lucide-react";
 
 // Dasturlash tillari ma'lumotlari
 const skills = [
-  { 
-    name: "Java", 
-    icon: "☕", 
+  {
+    name: "Java",
+    icon: "☕",
     color: "from-red-500 to-orange-500",
-    glow: "shadow-red-500/30",
-    bg: "from-red-500/20 to-orange-500/20",
+    ring: "border-orange-400/60",
     desc: "Backend dasturlash",
-    level: "95%"
   },
-  { 
-    name: "React", 
-    icon: "⚛️", 
-    color: "from-cyan-400 to-blue-500",
-    glow: "shadow-cyan-500/30",
-    bg: "from-cyan-500/20 to-blue-500/20",
+  {
+    name: "React",
+    icon: "⚛️",
+    color: "from-cyan-400 to-sky-500",
+    ring: "border-cyan-400/60",
     desc: "Frontend framework",
-    level: "90%"
   },
-  { 
-    name: "Python", 
-    icon: "🐍", 
-    color: "from-blue-400 to-yellow-400",
-    glow: "shadow-blue-500/30",
-    bg: "from-blue-500/20 to-yellow-500/20",
+  {
+    name: "Python",
+    icon: "🐍",
+    color: "from-sky-400 to-amber-400",
+    ring: "border-sky-400/60",
     desc: "Ko'p maqsadli til",
-    level: "85%"
   },
-  { 
-    name: "Vite", 
-    icon: "⚡", 
-    color: "from-purple-400 to-pink-400",
-    glow: "shadow-purple-500/30",
-    bg: "from-purple-500/20 to-pink-500/20",
+  {
+    name: "Vite",
+    icon: "⚡",
+    color: "from-violet-400 to-amber-300",
+    ring: "border-violet-400/60",
     desc: "Tez build tool",
-    level: "88%"
   },
-  { 
-    name: "HTML", 
-    icon: "🌐", 
+  {
+    name: "HTML",
+    icon: "🌐",
     color: "from-orange-400 to-red-400",
-    glow: "shadow-orange-500/30",
-    bg: "from-orange-500/20 to-red-500/20",
+    ring: "border-orange-400/60",
     desc: "Web markup",
-    level: "92%"
-  }
+  },
 ];
+
+const ORBIT_DURATION = 22; // seconds — icons endi doim aylanib turadi
+const ORBIT_RADIUS = 108; // px
 
 export function Blog() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlay, setIsAutoPlay] = useState(true);
-  const [rotation, setRotation] = useState(0);
 
-  // Avtomatik aylanish
+  // Faol til nomini avtomatik almashtirish (orbitadan mustaqil)
   useEffect(() => {
     if (!isAutoPlay) return;
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % skills.length);
-      setRotation((prev) => prev + 72);
     }, 3000);
     return () => clearInterval(interval);
   }, [isAutoPlay]);
 
-  const nextSkill = () => {
-    setCurrentIndex((prev) => (prev + 1) % skills.length);
-    setRotation((prev) => prev + 72);
-  };
-
-  const prevSkill = () => {
+  const nextSkill = () => setCurrentIndex((prev) => (prev + 1) % skills.length);
+  const prevSkill = () =>
     setCurrentIndex((prev) => (prev - 1 + skills.length) % skills.length);
-    setRotation((prev) => prev - 72);
-  };
+
+  const playState = isAutoPlay ? "running" : "paused";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-[#0a0a0a] to-black flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background Effects */}
+    <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* keyframes for the orbit ring + counter-spin icons */}
+      <style>{`
+        @keyframes orbit-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes orbit-counter-spin { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
+      `}</style>
+
+      {/* Background: stadion tungi foni + maydon chizig'i gridi */}
       <div className="absolute inset-0">
         <motion.div
-          className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-purple-600/20 via-blue-600/20 to-transparent rounded-full blur-[120px]"
-          animate={{ 
-            x: [0, 80, 0],
-            y: [0, -50, 0],
-            scale: [1, 1.4, 1]
-          }}
-          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-600/10 rounded-full blur-[120px]"
+          animate={{ x: [0, 50, 0], y: [0, -30, 0], scale: [1, 1.2, 1] }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
-          className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-gradient-to-l from-indigo-600/10 via-purple-600/10 to-transparent rounded-full blur-[150px]"
-          animate={{ 
-            x: [0, -60, 0],
-            y: [0, 50, 0],
-            scale: [1, 1.3, 1]
-          }}
-          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+          className="absolute bottom-1/4 right-1/4 w-[480px] h-[480px] bg-amber-500/5 rounded-full blur-[150px]"
+          animate={{ x: [0, -40, 0], y: [0, 30, 0], scale: [1, 1.15, 1] }}
+          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 2 }}
         />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-tr from-purple-500/5 via-blue-500/5 to-transparent rounded-full blur-[100px]" />
-        
-        <div 
+        <div
           className="absolute inset-0 opacity-20"
           style={{
             backgroundImage: `
-              radial-gradient(circle at 20% 50%, rgba(139,92,246,0.1) 0%, transparent 50%),
-              radial-gradient(circle at 80% 50%, rgba(59,130,246,0.1) 0%, transparent 50%)
-            `
+              linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)
+            `,
+            backgroundSize: "56px 56px",
           }}
         />
       </div>
@@ -125,19 +107,20 @@ export function Blog() {
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
-        className="max-w-5xl w-full mx-auto relative z-10"
+        className="max-w-4xl w-full mx-auto relative z-10"
       >
-        {/* Header */}
+        {/* Eyebrow */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="flex justify-center mb-8"
+          className="flex justify-center mb-6"
         >
-          <div className="inline-flex items-center gap-3 px-6 py-2.5 rounded-full bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 backdrop-blur-sm">
-            <Sparkles className="w-4 h-4 text-purple-400 animate-pulse" />
-            <span className="text-gray-300 text-xs font-light tracking-[0.3em]">✦ MEN HAQIMDA ✦</span>
-            <Award className="w-4 h-4 text-blue-400 animate-pulse" />
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900/60 border border-zinc-800 backdrop-blur-sm">
+            <Sparkles className="w-4 h-4 text-emerald-400" />
+            <span className="font-mono text-zinc-400 text-xs tracking-[0.2em]">
+              MEN HAQIMDA
+            </span>
           </div>
         </motion.div>
 
@@ -146,243 +129,204 @@ export function Blog() {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="bg-gradient-to-br from-white/5 to-white/2 backdrop-blur-2xl border border-white/10 rounded-3xl p-8 md:p-12 shadow-2xl shadow-purple-500/10 relative overflow-hidden"
+          className="bg-zinc-900/60 backdrop-blur-xl border border-zinc-800 rounded-3xl p-6 md:p-10 shadow-2xl shadow-black/40"
         >
-          {/* Card glow */}
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl" />
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl" />
-
-          {/* Profile Section */}
-          <div className="relative">
-            <div className="flex flex-col md:flex-row items-center gap-8 mb-10">
-              <motion.div
-                whileHover={{ scale: 1.08, rotate: -8 }}
-                className="relative"
-              >
-                <div className="w-28 h-28 md:w-36 md:h-36 rounded-full bg-gradient-to-br from-purple-500/30 to-blue-500/30 border-2 border-purple-500/40 flex items-center justify-center shadow-2xl shadow-purple-500/20">
-                  <span className="text-6xl md:text-7xl">👨‍💻</span>
-                </div>
-                <div className="absolute -bottom-1 -right-1 w-10 h-10 rounded-full bg-green-500/20 border-2 border-green-500/30 flex items-center justify-center shadow-lg shadow-green-500/20">
-                  <div className="w-3 h-3 rounded-full bg-green-400 animate-ping" />
-                  <div className="absolute w-3 h-3 rounded-full bg-green-400" />
-                </div>
-              </motion.div>
-
-              <div className="text-center md:text-left flex-1">
-                <motion.h1
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.4 }}
-                  className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-3"
-                >
-                  Erkinov <span className="bg-gradient-to-r from-purple-400 via-blue-400 to-pink-400 bg-clip-text text-transparent">Ziyodullo</span>
-                </motion.h1>
-                
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.5 }}
-                  className="flex flex-wrap items-center justify-center md:justify-start gap-5 text-gray-400 text-sm"
-                >
-                  <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/5">
-                    <Calendar className="w-4 h-4 text-purple-400" />
-                    2005 yil 29-iyun
-                  </span>
-                  <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/5">
-                    <MapPin className="w-4 h-4 text-blue-400" />
-                    Andijon
-                  </span>
-                  <span className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/5">
-                    <Code2 className="w-4 h-4 text-pink-400" />
-                    IT sohasi
-                  </span>
-                </motion.div>
+          {/* Profile */}
+          <div className="flex flex-col md:flex-row items-center gap-6 mb-8 pb-8 border-b border-zinc-800">
+            <motion.div whileHover={{ scale: 1.05, rotate: -4 }} className="relative shrink-0">
+              <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-emerald-500/10 border-2 border-emerald-500/40 flex items-center justify-center">
+                <span className="text-5xl md:text-6xl">👨‍💻</span>
               </div>
-            </div>
-
-            {/* Description */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
-              className="mb-10"
-            >
-              <p className="text-gray-300 text-base md:text-lg font-light leading-relaxed text-center max-w-2xl mx-auto">
-                Hozirda IT sohasini mukammal o'rganyapman. 
-                <span className="text-purple-400 font-medium"> Java</span>, 
-                <span className="text-cyan-400 font-medium"> React</span>, 
-                <span className="text-blue-400 font-medium"> Python</span>, 
-                <span className="text-pink-400 font-medium"> Vite</span> va 
-                <span className="text-orange-400 font-medium"> HTML</span> 
-                tillarini mukammal bilaman.
-              </p>
+              <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-zinc-950 border-2 border-amber-400/60 flex items-center justify-center">
+                <div className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
+              </div>
             </motion.div>
 
-            {/* Divider */}
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: "100%" }}
-              transition={{ duration: 0.8, delay: 0.7 }}
-              className="h-[1px] bg-gradient-to-r from-transparent via-purple-500/40 to-transparent mb-10"
-            />
+            <div className="text-center md:text-left flex-1">
+              <motion.h1
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4 }}
+                className="font-display uppercase tracking-wide text-3xl md:text-4xl lg:text-5xl font-semibold text-white mb-3"
+              >
+                Erkinov Ziyodullo
+              </motion.h1>
+
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className="flex flex-wrap items-center justify-center md:justify-start gap-x-5 gap-y-2 text-zinc-400 text-sm"
+              >
+                <span className="flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4 text-emerald-400" />
+                  2005 yil 29-iyun
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <MapPin className="w-4 h-4 text-amber-400" />
+                  Andijon
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Code2 className="w-4 h-4 text-emerald-400" />
+                  IT sohasi
+                </span>
+              </motion.div>
+            </div>
           </div>
 
-          {/* Skills - Aylanuvchi */}
-          <div className="relative">
-            <div className="flex items-center justify-center gap-3 mb-8">
-              <Star className="w-4 h-4 text-yellow-400" />
-              <h3 className="text-gray-300 text-sm font-light tracking-[0.3em]">BILADIGAN TILLARIM</h3>
-              <Star className="w-4 h-4 text-yellow-400" />
-            </div>
+          {/* Description */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="text-zinc-300 text-base md:text-lg font-light leading-relaxed text-center mb-10 max-w-2xl mx-auto"
+          >
+            Hozirda IT sohasini mukammal o'rganyapman.{" "}
+            <span className="text-orange-400 font-medium">Java</span>,{" "}
+            <span className="text-cyan-400 font-medium">React</span>,{" "}
+            <span className="text-sky-400 font-medium">Python</span>,{" "}
+            <span className="text-violet-400 font-medium">Vite</span> va{" "}
+            <span className="text-orange-400 font-medium">HTML</span>{" "}
+            tillarini mukammal bilaman.
+          </motion.p>
 
-            <div className="relative flex items-center justify-center py-8">
-              {/* Navigation Buttons */}
+          {/* Skills Orbit */}
+          <div className="relative flex flex-col items-center">
+            <h3 className="font-mono text-zinc-500 text-xs tracking-[0.25em] text-center mb-8">
+              BILADIGAN TILLARIM
+            </h3>
+
+            <div className="relative flex items-center justify-center">
+              {/* Nav buttons */}
               <button
                 onClick={prevSkill}
-                className="absolute left-0 z-20 bg-white/10 hover:bg-white/20 backdrop-blur-lg border border-white/20 text-white p-3 rounded-full transition-all duration-300 hover:scale-110 hover:border-purple-500/50 shadow-lg shadow-purple-500/10"
+                aria-label="Oldingi til"
+                className="absolute left-0 z-20 bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-700 hover:border-emerald-500/50 text-zinc-300 hover:text-emerald-400 p-2 rounded-full transition-all duration-300"
               >
-                <ChevronLeft className="w-6 h-6" />
+                <ChevronLeft className="w-5 h-5" />
               </button>
-
               <button
                 onClick={nextSkill}
-                className="absolute right-0 z-20 bg-white/10 hover:bg-white/20 backdrop-blur-lg border border-white/20 text-white p-3 rounded-full transition-all duration-300 hover:scale-110 hover:border-purple-500/50 shadow-lg shadow-purple-500/10"
+                aria-label="Keyingi til"
+                className="absolute right-0 z-20 bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-700 hover:border-emerald-500/50 text-zinc-300 hover:text-emerald-400 p-2 rounded-full transition-all duration-300"
               >
-                <ChevronRight className="w-6 h-6" />
+                <ChevronRight className="w-5 h-5" />
               </button>
 
-              {/* Aylanuvchi container */}
-              <div className="relative w-72 h-72 md:w-96 md:h-96">
+              {/* Orbit track (visual guide ring) */}
+              <div className="w-64 h-64 md:w-72 md:h-72 rounded-full border border-dashed border-zinc-800" />
+
+              {/* Rotating ring — continuously spins */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  animation: `orbit-spin ${ORBIT_DURATION}s linear infinite`,
+                  animationPlayState: playState,
+                }}
+              >
                 {skills.map((skill, index) => {
-                  const angle = (index / skills.length) * 360 + rotation;
-                  const radius = 130;
-                  const x = Math.cos((angle - 90) * Math.PI / 180) * radius;
-                  const y = Math.sin((angle - 90) * Math.PI / 180) * radius;
-
+                  const angle = (360 / skills.length) * index;
                   const isActive = currentIndex === index;
-
                   return (
-                    <motion.div
+                    <div
                       key={skill.name}
-                      className="absolute top-1/2 left-1/2 cursor-pointer"
-                      animate={{
-                        x: x,
-                        y: y,
-                        scale: isActive ? 1.2 : 0.9,
+                      className="absolute top-1/2 left-1/2"
+                      style={{
+                        transform: `rotate(${angle}deg) translate(${ORBIT_RADIUS}px) rotate(${-angle}deg) translate(-50%, -50%)`,
                       }}
-                      transition={{
-                        type: "spring",
-                        stiffness: 120,
-                        damping: 18,
-                        duration: 0.6
-                      }}
-                      onClick={() => setCurrentIndex(index)}
                     >
-                      <motion.div
-                        whileHover={{ scale: 1.15 }}
-                        className={`relative w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-br ${skill.bg} border-2 ${
-                          isActive 
-                            ? `border-${skill.color.split(' ')[1].replace('to-', '')}/60 shadow-2xl ${skill.glow}` 
-                            : 'border-white/20'
-                        } flex items-center justify-center transition-all duration-300 backdrop-blur-sm group`}
+                      {/* counter-rotates so the icon itself always stays upright */}
+                      <div
+                        style={{
+                          animation: `orbit-counter-spin ${ORBIT_DURATION}s linear infinite`,
+                          animationPlayState: playState,
+                        }}
                       >
-                        <span className={`text-4xl md:text-5xl transition-transform duration-300 ${isActive ? 'scale-110' : ''}`}>
-                          {skill.icon}
-                        </span>
-                        
-                        {isActive && (
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            className="absolute -inset-1 rounded-full border-2 border-purple-500/30 animate-ping"
-                          />
-                        )}
-                      </motion.div>
-                    </motion.div>
+                        <button
+                          onClick={() => setCurrentIndex(index)}
+                          aria-label={skill.name}
+                          className={`w-14 h-14 md:w-16 md:h-16 rounded-full bg-gradient-to-br ${skill.color} bg-opacity-10 flex items-center justify-center transition-all duration-300 border-2 ${
+                            isActive
+                              ? `${skill.ring} scale-110 shadow-lg shadow-black/40`
+                              : "border-zinc-800 opacity-70 hover:opacity-100"
+                          } bg-zinc-900`}
+                        >
+                          <span className="text-2xl md:text-3xl">{skill.icon}</span>
+                        </button>
+                      </div>
+                    </div>
                   );
                 })}
               </div>
             </div>
 
-            {/* Current Skill Info */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentIndex}
-                initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -20, scale: 0.9 }}
-                transition={{ duration: 0.4 }}
-                className="text-center mt-6"
+            {/* Active skill label */}
+            <motion.div
+              key={currentIndex}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="text-center mt-8"
+            >
+              <h4
+                className={`font-display uppercase tracking-wide text-xl md:text-2xl font-semibold bg-gradient-to-r ${skills[currentIndex].color} bg-clip-text text-transparent`}
               >
-                <h4 className={`text-2xl md:text-3xl font-bold bg-gradient-to-r ${skills[currentIndex].color} bg-clip-text text-transparent`}>
-                  {skills[currentIndex].name}
-                </h4>
-                <p className="text-gray-400 text-sm mt-1 font-light">
-                  {skills[currentIndex].desc}
-                </p>
-                <div className="flex items-center justify-center gap-2 mt-2">
-                  <div className="w-32 h-1 bg-white/10 rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: skills[currentIndex].level }}
-                      transition={{ duration: 0.8, delay: 0.2 }}
-                      className={`h-full bg-gradient-to-r ${skills[currentIndex].color} rounded-full`}
-                    />
-                  </div>
-                  <span className="text-gray-500 text-xs font-mono">
-                    {skills[currentIndex].level}
-                  </span>
-                </div>
-              </motion.div>
-            </AnimatePresence>
+                {skills[currentIndex].name}
+              </h4>
+              <p className="text-zinc-500 text-sm mt-1">{skills[currentIndex].desc}</p>
+            </motion.div>
 
             {/* Dots */}
-            <div className="flex justify-center gap-3 mt-6">
+            <div className="flex justify-center gap-2 mt-5">
               {skills.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentIndex(index)}
+                  aria-label={`${skills[index].name} tanlash`}
                   className={`transition-all duration-300 rounded-full ${
                     currentIndex === index
-                      ? 'w-8 h-2 bg-gradient-to-r from-purple-500 to-blue-500 shadow-lg shadow-purple-500/30'
-                      : 'w-2 h-2 bg-gray-600 hover:bg-gray-400'
+                      ? "w-6 h-1.5 bg-emerald-500"
+                      : "w-1.5 h-1.5 bg-zinc-700 hover:bg-zinc-500"
                   }`}
                 />
               ))}
             </div>
 
-            {/* Play/Pause */}
+            {/* Play/Pause — endi oddiy oqim ichida, hech narsaga qoplanmaydi */}
             <button
               onClick={() => setIsAutoPlay(!isAutoPlay)}
-              className="mt-6 text-gray-500 hover:text-gray-300 transition-colors duration-300 text-xs tracking-widest flex items-center gap-2 mx-auto"
+              className="mt-5 text-zinc-500 hover:text-emerald-400 transition-colors duration-300 text-xs font-mono tracking-widest flex items-center gap-2"
             >
-              <span className="w-4 h-px bg-gray-700" />
-              <span>{isAutoPlay ? '⏸ PAUSE' : '▶ PLAY'}</span>
-              <span className="w-4 h-px bg-gray-700" />
+              <span>{isAutoPlay ? "⏸" : "▶"}</span>
+              <span>{isAutoPlay ? "TO'XTATISH" : "DAVOM ETTIRISH"}</span>
             </button>
           </div>
         </motion.div>
 
-        {/* Footer */}
+        {/* Footer quote */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.2 }}
-          className="mt-8 flex flex-col items-center gap-3"
+          className="mt-12 flex items-center justify-center gap-4 text-zinc-700 text-xs font-mono"
         >
-          <div className="flex items-center justify-center gap-4 text-gray-700/50 text-xs font-mono">
-            <span className="w-6 h-px bg-gradient-to-r from-transparent to-gray-700/50" />
-            <span className="tracking-[0.3em] flex items-center gap-3">
-              <span>✧</span>
-              Gap ko'p — amal qilish qiyin
-              <span>✧</span>
-            </span>
-            <span className="w-6 h-px bg-gradient-to-l from-transparent to-gray-700/50" />
-          </div>
-          <p className="text-gray-600 text-xs font-light tracking-[0.3em]">
-            lekin harakat qilish kerak ✦
-          </p>
+          <span className="w-6 h-px bg-gradient-to-r from-transparent to-zinc-700" />
+          <span className="tracking-widest flex items-center gap-2">
+            <span className="text-emerald-500">✧</span>
+            Gap ko'p — amal qilish qiyin
+            <span className="text-emerald-500">✧</span>
+          </span>
+          <span className="w-6 h-px bg-gradient-to-l from-transparent to-zinc-700" />
         </motion.div>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.4 }}
+          className="text-zinc-600 text-xs text-center mt-4 font-light tracking-wider"
+        >
+          lekin harakat qilish kerak ✦
+        </motion.p>
       </motion.div>
     </div>
   );
