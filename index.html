@@ -1,18 +1,104 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uz">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Erkinov_ziyodullo</title>
-    <meta name="description" content="Create a modern, responsive personal blog that showcases skills, projects, and achievements while engaging visitors with a sleek design and interactive features." />
-    <meta name="robots" content="noindex, nofollow" />
+    
+    <!-- ===== SEO TITLE ===== -->
+    <title>Erkinov Ziyodullo | Shaxsiy Blog va Veb-sayt</title>
+    
+    <!-- ===== SEO META DESCRIPTION ===== -->
+    <meta name="description" content="Erkinov Ziyodullo shaxsiy blogi. Dasturlash, texnologiyalar, kitoblar va shaxsiy rivojlanish haqida maqolalar. React, JavaScript, frontend va backend dasturlash." />
+    
+    <!-- ===== SEO KEYWORDS ===== -->
+    <meta name="keywords" content="Erkinov Ziyodullo, shaxsiy blog, dasturlash, React, JavaScript, frontend, backend, veb-sayt, texnologiya, kitoblar, shaxsiy rivojlanish" />
+    
+    <!-- ===== ROBOTS ===== -->
+    <meta name="robots" content="index, follow" />
+    <meta name="googlebot" content="index, follow" />
+    
+    <!-- ===== AUTHOR ===== -->
+    <meta name="author" content="Erkinov Ziyodullo" />
+    
+    <!-- ===== OPEN GRAPH (Facebook, Telegram, WhatsApp) ===== -->
+    <meta property="og:title" content="Erkinov Ziyodullo | Shaxsiy Blog va Veb-sayt" />
+    <meta property="og:description" content="Dasturlash, texnologiyalar, kitoblar va shaxsiy rivojlanish haqida maqolalar." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://erkinov.uz" />
+    <meta property="og:image" content="https://erkinov.uz/og-image.jpg" />
+    <meta property="og:site_name" content="Erkinov Ziyodullo" />
+    <meta property="og:locale" content="uz_UZ" />
+    
+    <!-- ===== TWITTER CARDS ===== -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Erkinov Ziyodullo | Shaxsiy Blog va Veb-sayt" />
+    <meta name="twitter:description" content="Dasturlash, texnologiyalar, kitoblar va shaxsiy rivojlanish haqida maqolalar." />
+    <meta name="twitter:image" content="https://erkinov.uz/og-image.jpg" />
+    
+    <!-- ===== CANONICAL URL ===== -->
+    <link rel="canonical" href="https://erkinov.uz" />
+    
+    <!-- ===== SITEMAP ===== -->
+    <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml" />
+    
+    <!-- ===== FAVICON ===== -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    
+    <!-- ===== PRELOAD FONTS ===== -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    
+    <!-- ===== SCHEMA.ORG STRUCTURED DATA (JSON-LD) ===== -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "Erkinov Ziyodullo",
+      "url": "https://erkinov.uz",
+      "sameAs": [
+        "https://t.me/erkinovziyodullo",
+        "https://github.com/erkinov",
+        "https://linkedin.com/in/erkinov"
+      ],
+      "jobTitle": "Full Stack Developer",
+      "description": "Shaxsiy blog va dasturlash bo'yicha maqolalar muallifi",
+      "image": "https://erkinov.uz/profile.jpg"
+    }
+    </script>
+    
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Erkinov Ziyodullo",
+      "url": "https://erkinov.uz",
+      "description": "Shaxsiy blog va veb-sayt",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://erkinov.uz/search?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+    
     <style>
       html, body { 
         height: 100%; 
         margin: 0; 
+        padding: 0;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       } 
       #root { 
         height: 100%; 
+      }
+      
+      /* ===== PERFORMANCE: Reduce layout shift ===== */
+      img, video {
+        max-width: 100%;
+        height: auto;
+        display: block;
       }
     </style>
   </head>
