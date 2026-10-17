@@ -5,11 +5,7 @@ import {
   Menu,
   X,
   Home,
-  Image,
-  BookOpen,
-  Code,
   Newspaper,
-  User,
   ArrowUp,
 } from "lucide-react";
 
@@ -36,13 +32,10 @@ export function Layout() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // Faqat Bosh sahifa va Yangiliklar
   const navLinks = [
     { path: "/", label: "Bosh sahifa", icon: Home },
     { path: "/news", label: "Yangiliklar", icon: Newspaper },
-    { path: "/gallery", label: "Galereya", icon: Image },
-    { path: "/blog", label: "Blog", icon: BookOpen },
-    { path: "/skills", label: "Ko'nikmalar", icon: Code },
-    { path: "/about", label: "Men haqimda", icon: User },
   ];
 
   return (
@@ -176,23 +169,11 @@ export function Layout() {
         )}
       </AnimatePresence>
 
-      {/* Footer - Sadece isim ve link */}
+      {/* Footer */}
       <footer className="border-t border-gray-200 mt-32">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
             <p>© 2026 Erkinov. Barcha huquqlar himoyalangan.</p>
-            <div className="flex items-center gap-4">
-              <a
-                href="https://t.me/erkinovziyodullo"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-blue-600 transition-colors"
-              >
-                
-              </a>
-              <span className="w-1 h-1 rounded-full bg-gray-300" />
-              <span></span>
-            </div>
           </div>
         </div>
       </footer>

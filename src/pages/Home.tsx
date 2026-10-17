@@ -1,334 +1,155 @@
-// pages/Home.tsx
-import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Moon, Sun, Menu, X, Github, Twitter, Linkedin } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-
-const LINES = [
-  "> tizim ishga tushmoqda...",
-  "> modullar yuklanmoqda... OK",
-  "> ulanish o'rnatildi",
-  "",
-  "Xush kelibsiz",
-];
-
-// BootScreen komponenti Home dan oldin aniqlanishi kerak
-function BootScreen({ onFinish }: { onFinish: () => void }) {
-  const [visibleLines, setVisibleLines] = useState<string[]>([]);
-  const [charIndex, setCharIndex] = useState(0);
-  const [lineIndex, setLineIndex] = useState(0);
-
-  useEffect(() => {
-    if (lineIndex >= LINES.length) {
-      const t = setTimeout(onFinish, 400);
-      return () => clearTimeout(t);
-    }
-
-    const currentLine = LINES[lineIndex];
-
-    if (charIndex < currentLine.length) {
-      const t = setTimeout(() => setCharIndex((c) => c + 1), 20);
-      return () => clearTimeout(t);
-    } else {
-      const t = setTimeout(() => {
-        setVisibleLines((prev) => [...prev, currentLine]);
-        setLineIndex((l) => l + 1);
-        setCharIndex(0);
-      }, 200);
-      return () => clearTimeout(t);
-    }
-  }, [charIndex, lineIndex, onFinish]);
-
-  const typingLine =
-    lineIndex < LINES.length ? LINES[lineIndex].slice(0, charIndex) : "";
-
-  return (
-    <motion.div
-      className="fixed inset-0 z-50 bg-white dark:bg-gray-900 flex items-center justify-center font-mono text-gray-700 dark:text-gray-300 p-4"
-      initial={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <div className="w-full max-w-md border border-gray-200 dark:border-gray-700 p-6 rounded-2xl bg-gray-50 dark:bg-gray-800">
-        <div className="flex items-center gap-2 pb-3 mb-4 border-b border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400">
-          <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />
-          <span>Boot</span>
-        </div>
-
-        <div className="space-y-1.5 text-sm leading-relaxed">
-          {visibleLines.map((line, i) => (
-            <div key={i} className={line.includes("Xush kelibsiz") ? "text-black dark:text-white font-bold text-lg pt-2" : "text-gray-600 dark:text-gray-400"}>
-              {line}
-            </div>
-          ))}
-
-          <div className={typingLine.includes("Xush kelibsiz") ? "text-black dark:text-white font-bold text-lg pt-2" : "text-gray-600 dark:text-gray-400"}>
-            {typingLine}
-            <span className="inline-block w-2 h-4 bg-blue-500 ml-1 animate-pulse" />
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
+import { Newspaper, RotateCcw } from "lucide-react";
+import { motion } from "framer-motion";
 
 export function Home() {
-  const [booted, setBooted] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [darkMode, setDarkMode] = useState(() => {
-    return localStorage.getItem('theme') === 'dark';
-  });
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const fullText =
+    "Men Erkinov Ziyodullo, 2005-yil 29-iyunda Andijon viloyati Paxtaobod tumanida tug'ilganman.";
 
-  // Dark mode ni localStorage ga saqlash
+  const [displayText, setDisplayText] = useState("");
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isClosed, setIsClosed] = useState(false);
+
+  // Yozish tezligi tezlashtirildi (35ms)
   useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
+    if (currentIndex < fullText.length) {
+      const timeout = setTimeout(() => {
+        setDisplayText((prev) => prev + fullText[currentIndex]);
+        setCurrentIndex((prev) => prev + 1);
+      }, 35);
+      return () => clearTimeout(timeout);
     } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
+      // Yozib bo'lgach 1.2 soniya o'qishga vaqt beradi va yopiladi
+      const closeTimer = setTimeout(() => {
+        setIsClosed(true);
+      }, 1200);
+      return () => clearTimeout(closeTimer);
     }
-  }, [darkMode]);
+  }, [currentIndex, fullText]);
 
-  // Progress bar animatsiyasi
-  useEffect(() => {
-    if (!booted) return;
-    const interval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          return 100;
-        }
-        return prev + 1;
-      });
-    }, 50);
-    return () => clearInterval(interval);
-  }, [booted]);
-
-  // Navigatsiya menyusi
-  const navItems = [
-    { name: 'Bosh sahifa', path: '/' },
-    { name: 'Yangiliklar', path: '/news' },
-    { name: 'Ko\'nikmalar', path: '/skills' },
-    { name: 'Galereya', path: '/gallery' },
-    { name: 'Blog', path: '/blog' },
-    { name: 'Men haqimda', path: '/about' },
-  ];
+  // Qaytadan ochish va yozdirish
+  const handleReopen = () => {
+    setIsClosed(false);
+    setDisplayText("");
+    setCurrentIndex(0);
+  };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-500">
-      <AnimatePresence>
-        {!booted && <BootScreen key="boot" onFinish={() => setBooted(true)} />}
-      </AnimatePresence>
+    <div className="min-h-screen w-full bg-[#111215] flex flex-col items-center justify-center p-4 sm:p-6 antialiased selection:bg-amber-200 selection:text-amber-900 overflow-hidden">
+      
+      {/* Tepadagi navigatsiya paneli */}
+      <div className="w-full max-w-xl flex items-center justify-between mb-5 px-1 z-50">
+        <span className="font-mono text-xs text-neutral-400">
+          kundalik.note
+        </span>
 
-      {booted && (
-        <>
-          {/* Navbar */}
-          <motion.nav
-            initial={{ y: -100 }}
-            animate={{ y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="fixed top-0 left-0 right-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800"
+        <div className="flex items-center gap-2">
+          {isClosed && (
+            <button
+              onClick={handleReopen}
+              className="inline-flex items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/20 px-3 py-1.5 text-xs font-medium text-neutral-200 border border-white/10 backdrop-blur-md transition-all active:scale-95"
+            >
+              <RotateCcw className="size-3.5 text-amber-400" />
+              <span>Qaytadan ochish</span>
+            </button>
+          )}
+
+          <Link
+            to="/news"
+            className="inline-flex items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/20 px-3.5 py-1.5 text-xs font-medium text-neutral-200 border border-white/10 backdrop-blur-md transition-all active:scale-95"
           >
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex justify-between items-center h-16">
-                {/* Logo */}
-                <Link to="/" className="text-xl font-bold text-gray-900 dark:text-white">
-                  Erkinov
-                </Link>
+            <Newspaper className="size-3.5 text-amber-400" />
+            <span>Yangiliklar</span>
+          </Link>
+        </div>
+      </div>
 
-                {/* Desktop menyu */}
-                <div className="hidden md:flex items-center space-x-8">
-                  {navItems.map((item) => (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
-                </div>
+      {/* 3D Maydon (Daftar) */}
+      <div className="relative w-full max-w-xl [perspective:1400px]">
+        <div className="relative w-full min-h-[400px] sm:min-h-[460px] rounded-2xl bg-[#1e1914] p-3 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border border-white/10">
+          
+          {/* Ichki Oq Sahifa (Har doim ochiq va yozuv ko'rinib turadi) */}
+          <div className="relative z-10 w-full h-full min-h-[380px] sm:min-h-[435px] rounded-xl bg-[#faf6ee] shadow-[inset_0_0_30px_rgba(180,150,110,0.2)] border border-[#e5dcce] overflow-hidden p-6 sm:p-8 flex flex-col justify-between">
+            
+            {/* Qizil hoshiya chizig'i */}
+            <div className="absolute top-0 bottom-0 left-10 sm:left-14 w-[1px] bg-red-400/50 pointer-events-none" />
 
-                {/* O'ng tomon */}
-                <div className="flex items-center space-x-4">
-                  {/* Dark mode tugmasi */}
-                  <button
-                    onClick={() => setDarkMode(!darkMode)}
-                    className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                    aria-label="Mavzuni almashtirish"
-                  >
-                    {darkMode ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-gray-700" />}
-                  </button>
+            {/* Qog'oz chiziqlari */}
+            <div
+              className="absolute inset-0 pl-12 sm:pl-16 pr-5 sm:pr-8 pt-14 pointer-events-none"
+              style={{
+                backgroundImage:
+                  "repeating-linear-gradient(transparent, transparent 35px, rgba(99, 133, 184, 0.16) 35px, rgba(99, 133, 184, 0.16) 36px)",
+              }}
+            />
 
-                  {/* Mobil menyu tugmasi */}
-                  <button
-                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                    className="md:hidden p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                    aria-label="Menyuni ochish/yopish"
-                  >
-                    {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
+            {/* Sana qismi */}
+            <div className="relative z-10 flex justify-between items-center pl-6 sm:pl-10 pb-3 border-b border-[#ebdcc7]">
+              <span className="text-[10px] sm:text-xs font-mono uppercase tracking-wider text-[#8c7a65]">
+                Andijon, Paxtaobod
+              </span>
+              <span className="font-mono text-[11px] sm:text-xs text-[#8c7a65] font-semibold bg-[#f0e6d6] px-2.5 py-0.5 rounded-md">
+                2005.06.29
+              </span>
             </div>
 
-            {/* Mobil menyu */}
-            <AnimatePresence>
-              {mobileMenuOpen && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900"
-                >
-                  <div className="px-4 py-4 space-y-3">
-                    {navItems.map((item) => (
-                      <Link
-                        key={item.path}
-                        to={item.path}
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="block text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-                      >
-                        {item.name}
-                      </Link>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.nav>
+            {/* Ruchka bilan yoziladigan matn */}
+            <div className="relative z-10 pl-6 sm:pl-10 my-auto py-4">
+              <p className="font-serif italic text-xl sm:text-3xl text-[#1a2d59] font-medium leading-[36px] sm:leading-[44px] tracking-wide">
+                {displayText}
+                {!isClosed && (
+                  <span className="inline-block w-[2.5px] h-5 sm:h-7 bg-[#254ea8] ml-1.5 translate-y-1 animate-pulse" />
+                )}
+              </p>
+            </div>
 
-          {/* Asosiy kontent */}
-          <div className="min-h-screen flex flex-col items-center justify-center px-4 relative overflow-hidden pt-20">
-            {/* Gradient fon */}
-            <div className="absolute inset-0 bg-gradient-to-b from-white via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-500" />
-            
-            {/* Orbs */}
-            <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-500/10 dark:bg-blue-500/5 rounded-full blur-3xl animate-pulse" />
-            <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-purple-500/10 dark:bg-purple-500/5 rounded-full blur-3xl animate-pulse delay-1000" />
-
-            <div className="text-center max-w-2xl mx-auto relative z-10">
-              {/* Logo */}
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.5 }}
-                className="mb-8"
-              >
-                <div className="inline-block px-8 py-4 rounded-2xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 transition-colors duration-300 shadow-xl">
-                  <span className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
-                    Erkinov
-                  </span>
-                </div>
-              </motion.div>
-
-              {/* Title */}
-              <motion.h1
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.2 }}
-                className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4"
-              >
-                Tez orada foydali
-                <br />
-                <span className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
-                  veb-sayt
-                </span> taqdim etamiz
-              </motion.h1>
-
-              {/* Description */}
-              <motion.p
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.4 }}
-                className="text-gray-500 dark:text-gray-400 text-base sm:text-lg mb-8 max-w-md mx-auto"
-              >
-                Siz uchun eng zamonaviy va foydali platformani tayyorlayapmiz
-              </motion.p>
-
-              {/* Progress Section */}
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.6 }}
-                className="max-w-sm mx-auto"
-              >
-                <div className="relative h-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                  <motion.div
-                    className="h-full bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 rounded-full"
-                    style={{ width: `${progress}%` }}
-                    transition={{ duration: 0.1 }}
-                  />
-                </div>
-
-                <div className="flex justify-between mt-2 text-xs text-gray-400 dark:text-gray-500">
-                  <span>Tayyorlanmoqda</span>
-                  <span className="font-mono">{progress}%</span>
-                </div>
-
-                {/* Airplane Animation */}
-                <div className="relative h-8 mt-4 overflow-hidden">
-                  <motion.div
-                    className="absolute left-0 text-2xl"
-                    animate={{ x: `${progress}%` }}
-                    transition={{ duration: 0.1, ease: "linear" }}
-                  >
-                    <span className="inline-block transform -rotate-45">✈️</span>
-                  </motion.div>
-                  <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-px bg-gray-200 dark:bg-gray-700" />
-                </div>
-              </motion.div>
-
-              {/* Contact */}
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.8 }}
-                className="mt-10"
-              >
-                <p className="text-sm text-gray-400 dark:text-gray-500 mb-2">Hurmat bilan,</p>
-                <p className="text-lg font-medium text-gray-800 dark:text-gray-200">Erkinov Ziyodullo</p>
-                
-                <div className="flex items-center justify-center gap-3 mt-3">
-                  <a
-                    href="https://t.me/erkinovziyodullo"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-6 py-2 text-sm text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all duration-300"
-                  >
-                    Bog'lanish
-                  </a>
-                  
-                  {/* Ijtimoiy tarmoqlar */}
-                  <a
-                    href="#"
-                    className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                    aria-label="GitHub"
-                  >
-                    <Github className="w-5 h-5" />
-                  </a>
-                  <a
-                    href="#"
-                    className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                    aria-label="Twitter"
-                  >
-                    <Twitter className="w-5 h-5" />
-                  </a>
-                  <a
-                    href="#"
-                    className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                    aria-label="LinkedIn"
-                  >
-                    <Linkedin className="w-5 h-5" />
-                  </a>
-                </div>
-              </motion.div>
+            {/* Imzo */}
+            <div className="relative z-10 flex items-center justify-end pl-6 sm:pl-10 pt-3 border-t border-[#ebdcc7] text-xs font-serif text-[#9b8872]">
+              <span className="italic font-semibold text-[#1a2d59]">Z. Erkinov</span>
             </div>
           </div>
-        </>
-      )}
+
+          {/* Yopiluvchi Qora Muqova (Faqat yozuv tugagach o'ngdan yopiladi) */}
+          <motion.div
+            initial={{ rotateY: 180, opacity: 0 }}
+            animate={{
+              rotateY: isClosed ? 0 : 180,
+              opacity: isClosed ? 1 : 0,
+            }}
+            transition={{
+              duration: 0.9,
+              ease: [0.4, 0, 0.2, 1],
+            }}
+            style={{ transformOrigin: "left center" }}
+            onClick={handleReopen}
+            className={`absolute inset-0 z-30 rounded-2xl bg-gradient-to-br from-[#2b231c] via-[#1f1914] to-[#12100d] border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.95)] flex flex-col justify-between p-7 sm:p-9 cursor-pointer ${
+              isClosed ? "pointer-events-auto" : "pointer-events-none"
+            }`}
+          >
+            <div className="absolute top-0 right-8 sm:right-10 w-4 h-9 bg-red-800 rounded-b shadow-md" />
+
+            <div className="flex justify-between items-center text-[10px] sm:text-xs font-mono uppercase tracking-widest text-[#a89078]/70">
+              <span>Shaxsiy kundalik</span>
+              <span>2005</span>
+            </div>
+
+            <div className="my-auto text-center">
+              <h2 className="text-2xl sm:text-3xl font-serif tracking-widest uppercase font-bold text-[#e8dfcf] drop-shadow-md">
+                Erkinov Ziyodullo
+              </h2>
+              <p className="mt-2 text-xs font-mono text-[#a89078] tracking-widest">
+                29.06.2005 • PAXTAOBOD
+              </p>
+            </div>
+
+            <div className="text-center text-[11px] font-mono text-neutral-400">
+              Ochish uchun ustiga bosing
+            </div>
+          </motion.div>
+
+        </div>
+      </div>
     </div>
   );
 }
