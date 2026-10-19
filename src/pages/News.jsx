@@ -1,267 +1,170 @@
-import { useEffect, useState, useRef } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Send, Sparkles } from "lucide-react";
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { Environment, Float, Lightformer, Sparkles } from "@react-three/drei";
+import { Bloom, EffectComposer, Vignette } from "@react-three/postprocessing";
+import * as THREE from "three";
+import Lenis from "lenis";
+import { MotionConfig, motion } from "framer-motion";
+import { Send } from "lucide-react";
 
-// Ekran devorlariga tegib sakraydigan realistik Chempionlar ligasi to'pi
-function BouncingUCLBall() {
-  const ballRef = useRef(null);
+const css = `
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Manrope:wght@400;600;700&display=swap');
+:root{--bg:#06070c;--mute:#9aa0bd;--v:#7c5cff;--c:#22d3ee}
+.fd{font-family:'Bricolage Grotesque',system-ui,sans-serif}.fb{font-family:'Manrope',system-ui,sans-serif}
+a:focus-visible{outline:2px solid var(--c);outline-offset:4px;border-radius:999px}
+`;
 
+// Yangilik qo'shish uchun: { date: "12-oktabr, 2026", title: "...", text: "..." }
+const news = [];
+
+const glow = new THREE.Color("#22d3ee").multiplyScalar(3);
+
+function useSmoothScroll() {
   useEffect(() => {
-    let x = Math.random() * (window.innerWidth - 100);
-    let y = Math.random() * (window.innerHeight - 100);
-    let vx = (Math.random() > 0.5 ? 1 : -1) * (1.2 + Math.random() * 0.8);
-    let vy = (Math.random() > 0.5 ? 1 : -1) * (1.2 + Math.random() * 0.8);
-    let rotation = 0;
-    let animId;
-
-    const size = window.innerWidth < 640 ? 70 : 95;
-
-    const animate = () => {
-      x += vx;
-      y += vy;
-      rotation += (vx + vy) * 0.8;
-
-      const maxX = window.innerWidth - size;
-      const maxY = window.innerHeight - size;
-
-      if (x >= maxX) {
-        x = maxX;
-        vx = -Math.abs(vx);
-      } else if (x <= 0) {
-        x = 0;
-        vx = Math.abs(vx);
-      }
-
-      if (y >= maxY) {
-        y = maxY;
-        vy = -Math.abs(vy);
-      } else if (y <= 0) {
-        y = 0;
-        vy = Math.abs(vy);
-      }
-
-      if (ballRef.current) {
-        ballRef.current.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${rotation}deg)`;
-      }
-
-      animId = requestAnimationFrame(animate);
-    };
-
-    animId = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(animId);
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const lenis = new Lenis({ lerp: 0.09 });
+    let id;
+    const raf = (t) => { lenis.raf(t); id = requestAnimationFrame(raf); };
+    id = requestAnimationFrame(raf);
+    return () => { cancelAnimationFrame(id); lenis.destroy(); };
   }, []);
+}
 
+function Rig() {
+  useFrame((s, dt) => {
+    s.camera.position.x = THREE.MathUtils.damp(s.camera.position.x, s.pointer.x * 0.8, 3, dt);
+    s.camera.position.y = THREE.MathUtils.damp(s.camera.position.y, s.pointer.y * 0.5, 3, dt);
+    s.camera.lookAt(0, 0, 0);
+  });
+  return null;
+}
+
+function Ripples() {
+  const refs = useRef([]);
+  useFrame(({ clock }) => {
+    refs.current.forEach((m, i) => {
+      if (!m) return;
+      const k = (clock.elapsedTime / 4 + i / 3) % 1;
+      m.scale.setScalar(0.8 + k * 3.4);
+      m.material.opacity = (1 - k) * 0.9;
+    });
+  });
+  return [0, 1, 2].map((i) => (
+    <mesh key={i} ref={(el) => (refs.current[i] = el)} rotation={[Math.PI / 2.15, 0, 0]}>
+      <torusGeometry args={[1, 0.008, 8, 180]} />
+      <meshBasicMaterial color={glow} transparent toneMapped={false} />
+    </mesh>
+  ));
+}
+
+function Knot({ reduce }) {
+  const g = useRef();
+  useFrame((s, dt) => {
+    const wide = s.viewport.width > 7;
+    g.current.position.y = THREE.MathUtils.damp(g.current.position.y, wide ? 1.15 : 1.5, 3, dt);
+    g.current.scale.setScalar(wide ? 1 : 0.75);
+    g.current.rotation.y += dt * 0.3;
+    g.current.rotation.x = THREE.MathUtils.damp(g.current.rotation.x, -s.pointer.y * 0.5, 3, dt);
+  });
   return (
-    <div
-      ref={ballRef}
-      className="pointer-events-none fixed top-0 left-0 z-0 size-[70px] sm:size-[95px] select-none opacity-45 will-change-transform"
-    >
-      <svg
-        viewBox="0 0 100 100"
-        className="w-full h-full drop-shadow-[0_0_30px_rgba(59,130,246,0.4)]"
-      >
-        <defs>
-          <radialGradient id="uclSphereNews" cx="35%" cy="35%" r="65%">
-            <stop offset="0%" stopColor="#ffffff" />
-            <stop offset="60%" stopColor="#cbd5e1" />
-            <stop offset="100%" stopColor="#475569" />
-          </radialGradient>
-        </defs>
-        <circle cx="50" cy="50" r="46" fill="url(#uclSphereNews)" stroke="#0f172a" strokeWidth="2.5" />
-        <g fill="#090d16" stroke="#1d4ed8" strokeWidth="1">
-          <polygon points="50,28 55,41 69,41 58,50 62,63 50,55 38,63 42,50 31,41 45,41" />
-          <polygon points="26,14 30,24 41,24 32,31 35,41 26,35 17,41 20,31 11,24 22,24" />
-          <polygon points="74,14 78,24 89,24 80,31 83,41 74,35 65,41 68,31 59,24 70,24" />
-          <polygon points="76,60 80,70 91,70 82,77 85,87 76,81 67,87 70,77 61,70 72,70" />
-          <polygon points="24,60 28,70 39,70 30,77 33,87 24,81 15,87 18,77 9,70 20,70" />
-        </g>
-      </svg>
-    </div>
+    <group ref={g}>
+      <Float speed={reduce ? 0 : 1.6} rotationIntensity={0.4} floatIntensity={1}>
+        <mesh>
+          <torusKnotGeometry args={[0.85, 0.28, 300, 36]} />
+          <meshPhysicalMaterial color="#8b6cff" metalness={1} roughness={0.12} iridescence={1} iridescenceIOR={1.4} clearcoat={1} envMapIntensity={1.5} />
+        </mesh>
+      </Float>
+      <Ripples />
+    </group>
+  );
+}
+
+function Scene({ reduce }) {
+  return (
+    <Canvas dpr={[1, 1.75]} camera={{ position: [0, 0, 7.5], fov: 42 }} gl={{ powerPreference: "high-performance" }} eventSource={document.body} eventPrefix="client">
+      <color attach="background" args={["#06070c"]} />
+      <ambientLight intensity={0.25} />
+      <Suspense fallback={null}>
+        <Environment resolution={256} frames={1}>
+          <Lightformer form="rect" intensity={4} position={[-4, 3, -3]} scale={[8, 4, 1]} color="#7c5cff" />
+          <Lightformer form="rect" intensity={4} position={[5, -2, 2]} scale={[6, 3, 1]} color="#22d3ee" />
+          <Lightformer form="ring" intensity={3} position={[0, 4, 4]} scale={4} color="#ffffff" />
+        </Environment>
+        <Knot reduce={reduce} />
+        <Sparkles count={120} scale={[16, 9, 8]} size={2.5} speed={reduce ? 0 : 0.35} color="#a5b4ff" />
+      </Suspense>
+      <Rig />
+      <EffectComposer multisampling={0}>
+        <Bloom intensity={1.1} luminanceThreshold={0.9} mipmapBlur />
+        <Vignette offset={0.25} darkness={0.85} />
+      </EffectComposer>
+    </Canvas>
+  );
+}
+
+function Nav() {
+  return (
+    <nav aria-label="Asosiy" className="fb fixed left-1/2 top-4 z-30 flex -translate-x-1/2 gap-1 rounded-full border border-white/10 bg-white/[0.06] p-1 backdrop-blur-xl">
+      <Link to="/" className="rounded-full px-4 py-2 text-sm font-semibold text-[var(--mute)] transition-colors hover:text-white">Bosh sahifa</Link>
+      <span className="rounded-full bg-white/15 px-4 py-2 text-sm font-semibold">Yangiliklar</span>
+    </nav>
   );
 }
 
 export function News() {
-  const line1 = "Yangiliklar hozircha mavjud emas...";
-  const line2 = "Gapingiz bo'lsa, bemalol yozing:";
-
-  const [text1, setText1] = useState("");
-  const [text2, setText2] = useState("");
-  const [index1, setIndex1] = useState(0);
-  const [index2, setIndex2] = useState(0);
-
-  // 3D Parallax Tilt
-  const mouseX = useMotionValue(0.5);
-  const mouseY = useMotionValue(0.5);
-
-  const rotateX = useSpring(useTransform(mouseY, [0, 1], [10, -10]), {
-    stiffness: 180,
-    damping: 20,
-  });
-  const rotateY = useSpring(useTransform(mouseX, [0, 1], [-12, 12]), {
-    stiffness: 180,
-    damping: 20,
-  });
-
-  const handleMouseMove = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    mouseX.set((e.clientX - rect.left) / rect.width);
-    mouseY.set((e.clientY - rect.top) / rect.height);
-  };
-
-  const handleMouseLeave = () => {
-    mouseX.set(0.5);
-    mouseY.set(0.5);
-  };
-
-  // 1-qator
-  useEffect(() => {
-    if (index1 < line1.length) {
-      const t = setTimeout(() => {
-        setText1((prev) => prev + line1[index1]);
-        setIndex1((prev) => prev + 1);
-      }, 35);
-      return () => clearTimeout(t);
-    }
-  }, [index1, line1]);
-
-  // 2-qator
-  useEffect(() => {
-    if (index1 >= line1.length && index2 < line2.length) {
-      const t = setTimeout(() => {
-        setText2((prev) => prev + line2[index2]);
-        setIndex2((prev) => prev + 1);
-      }, 35);
-      return () => clearTimeout(t);
-    }
-  }, [index1, line1.length, index2, line2]);
+  useSmoothScroll();
+  const reduce = typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   return (
-    <div
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      className="relative min-h-screen w-full bg-[#0d1117] flex flex-col items-center justify-center p-4 sm:p-8 antialiased selection:bg-amber-300 selection:text-neutral-900 overflow-hidden"
-    >
-      {/* Devorlarga urilib sakraydigan UCL to'pi */}
-      <BouncingUCLBall />
+    <MotionConfig reducedMotion="user">
+      <div className="fb relative min-h-screen w-full overflow-x-hidden bg-[var(--bg)] text-white antialiased selection:bg-[var(--v)]">
+        <style>{css}</style>
+        <div aria-hidden className="pointer-events-none fixed inset-0 z-0"><Scene reduce={reduce} /></div>
+        <Nav />
 
-      {/* Kinematik fon nurlari */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[45rem] h-[30rem] bg-gradient-to-tr from-blue-600/20 via-indigo-600/15 to-amber-500/10 blur-[130px] rounded-full" />
-        <div className="absolute inset-0 bg-[radial-gradient(#ffffff08_1px,transparent_1px)] [background-size:28px_28px] opacity-70" />
-      </div>
+        <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-3xl flex-col px-6 pb-8 pt-[46vh]">
+          <div className="flex-1">
+            <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.2, 0.8, 0.2, 1] }} className="fd text-center text-5xl font-extrabold tracking-tight sm:text-7xl">
+              Yangiliklar
+            </motion.h1>
 
-      {/* Tepadagi navigatsiya paneli */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="w-full max-w-xl flex items-center justify-between mb-6 px-1 z-50"
-      >
-        <Link
-          to="/"
-          className="group inline-flex items-center gap-2 rounded-full bg-white/10 hover:bg-white/20 px-4 py-1.5 text-xs font-medium text-white border border-white/15 backdrop-blur-md shadow-md transition-all active:scale-95"
-        >
-          <ArrowLeft className="size-3.5 text-amber-400 transition-transform group-hover:-translate-x-1" />
-          <span>Bosh sahifaga qaytish</span>
-        </Link>
-
-        <div className="flex items-center gap-1.5 text-xs font-mono text-slate-300">
-          <Sparkles className="size-3.5 text-amber-400" />
-          <span>sahifa № 02</span>
-        </div>
-      </motion.div>
-
-      {/* 3D Maydon (Bloknot) */}
-      <motion.div
-        style={{ rotateX, rotateY, transformPerspective: 1200 }}
-        className="relative z-10 w-full max-w-xl transition-shadow duration-300"
-      >
-        <div className="absolute -inset-2 bg-gradient-to-r from-black/80 via-blue-950/40 to-black/80 blur-2xl -z-10 rounded-3xl opacity-80" />
-
-        <div className="relative w-full min-h-[430px] sm:min-h-[480px] rounded-3xl bg-[#0b101b] p-3 sm:p-4 border border-blue-500/25 shadow-2xl overflow-hidden">
-          
-          <div className="relative z-10 w-full h-full min-h-[400px] sm:min-h-[450px] rounded-2xl bg-[#faf7ee] shadow-[inset_0_0_40px_rgba(200,175,130,0.35)] border border-[#e8ded0] p-6 sm:p-9 flex flex-col justify-between overflow-hidden">
-            <div className="absolute top-0 bottom-0 left-11 sm:left-14 w-[1.5px] bg-red-400/60 pointer-events-none" />
-            <div
-              className="absolute inset-0 pl-13 sm:pl-16 pr-6 pt-14 pointer-events-none"
-              style={{
-                backgroundImage:
-                  "repeating-linear-gradient(transparent, transparent 35px, rgba(37, 99, 235, 0.15) 35px, rgba(37, 99, 235, 0.15) 36px)",
-              }}
-            />
-
-            <div className="relative z-10 flex justify-between items-center pl-7 sm:pl-10 pb-3 border-b border-[#ebdcc7]">
-              <span className="text-[11px] font-mono tracking-wider text-[#8c7a65] uppercase">
-                Rasmiy Eslatmalar
-              </span>
-              <span className="font-mono text-xs text-[#8c7a65] font-bold bg-[#f1e6d7] px-2.5 py-0.5 rounded-md shadow-sm">
-                2026-yil
-              </span>
-            </div>
-
-            <div className="relative z-10 pl-7 sm:pl-10 my-auto py-5 space-y-6">
-              <div>
-                <p className="relative font-serif italic text-xl sm:text-2xl text-[#162a56] font-medium leading-[38px] tracking-wide select-none">
-                  {text1}
-                  {index1 < line1.length && (
-                    <motion.span
-                      animate={{ rotate: [12, 24, 12], y: [-2, 2, -2] }}
-                      transition={{ repeat: Infinity, duration: 0.35 }}
-                      className="inline-block relative text-2xl ml-1 -translate-y-1.5 pointer-events-none filter drop-shadow-md"
-                    >
-                      ✒️
-                    </motion.span>
-                  )}
-                </p>
-              </div>
-
-              {index1 >= line1.length && (
-                <div className="pt-2">
-                  <p className="relative font-serif italic text-lg sm:text-xl text-[#162a56] font-medium leading-[38px] tracking-wide select-none">
-                    {text2}
-                    {index2 < line2.length && (
-                      <motion.span
-                        animate={{ rotate: [12, 24, 12], y: [-2, 2, -2] }}
-                        transition={{ repeat: Infinity, duration: 0.35 }}
-                        className="inline-block relative text-2xl ml-1 -translate-y-1.5 pointer-events-none filter drop-shadow-md"
-                      >
-                        ✒️
-                      </motion.span>
-                    )}
+            <div className="mt-10">
+              {news.length === 0 ? (
+                <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.7 }} className="rounded-3xl border border-white/10 bg-white/[0.05] p-8 text-center backdrop-blur-md sm:p-10">
+                  <span className="mx-auto mb-4 flex size-3.5">
+                    <span className="absolute inline-flex size-3.5 animate-ping rounded-full bg-emerald-400 opacity-60" />
+                    <span className="relative inline-flex size-3.5 rounded-full bg-emerald-500" />
+                  </span>
+                  <p className="fd text-2xl font-extrabold sm:text-3xl">Yangilik hozircha yo'q, bizda tinchlik.</p>
+                  <p className="mx-auto mt-3 max-w-sm leading-relaxed text-[var(--mute)]">
+                    Hozircha hech qanday e'lon yo'q. Biror yangilik yoki taklifingiz bo'lsa, xabar qoldiring.
                   </p>
-
-                  {index2 >= line2.length && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      transition={{ duration: 0.4 }}
-                      className="mt-4 pt-1"
-                    >
-                      <a
-                        href="https://t.me/erkinovziyodullo"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600/10 to-indigo-600/10 hover:from-blue-600/20 hover:to-indigo-600/20 text-[#162a56] font-serif italic text-base sm:text-lg px-4 py-2 border border-blue-400/40 shadow-sm transition-all hover:scale-105 active:scale-95"
-                      >
-                        <Send className="size-4 text-blue-600 transition-transform group-hover:translate-x-0.5" />
-                        <span className="underline decoration-blue-500/50 underline-offset-4 font-semibold">
-                          @erkinovziyodullo (Telegram)
-                        </span>
-                      </a>
-                    </motion.div>
-                  )}
-                </div>
+                  <motion.a href="https://t.me/erkinovziyodullo" target="_blank" rel="noopener noreferrer" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} className="mt-7 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-[#06070c]">
+                    <Send className="size-4" />
+                    Yangilik bo'lsa xabar bering
+                  </motion.a>
+                </motion.div>
+              ) : (
+                <ul className="space-y-5">
+                  {news.map((n, i) => (
+                    <motion.li key={n.title} initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.6 }} className="rounded-3xl border border-white/10 bg-white/[0.05] p-6 backdrop-blur-md">
+                      <span className="text-sm text-[var(--mute)]">{n.date}</span>
+                      <h2 className="fd mt-1 text-2xl font-extrabold">{n.title}</h2>
+                      <p className="mt-2 leading-relaxed text-[var(--mute)]">{n.text}</p>
+                    </motion.li>
+                  ))}
+                </ul>
               )}
             </div>
-
-            <div className="relative z-10 flex items-center justify-between pl-7 sm:pl-10 pt-3 border-t border-[#ebdcc7] text-xs font-serif text-[#9b8872]">
-              <span className="font-mono text-[11px] text-[#a59178]">Holat: Kutilmoqda</span>
-              <span className="italic font-bold text-[#162a56] text-sm">Ziyodullo Erkinov</span>
-            </div>
           </div>
-        </div>
-      </motion.div>
-    </div>
+
+          <footer className="mt-16 flex flex-wrap justify-between gap-2 border-t border-white/10 pt-6 text-sm text-[var(--mute)]">
+            <span>© 2026 Erkinov Ziyodullo</span>
+            <span>Holat: hammasi sokin</span>
+          </footer>
+        </main>
+      </div>
+    </MotionConfig>
   );
 }

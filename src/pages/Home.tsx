@@ -1,405 +1,200 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Newspaper, RotateCcw, Trophy, Volume2, VolumeX } from "lucide-react";
-import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from "framer-motion";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { Environment, Float, Html, Lightformer, MeshDistortMaterial, Sparkles } from "@react-three/drei";
+import { Bloom, EffectComposer, Vignette } from "@react-three/postprocessing";
+import * as THREE from "three";
+import Lenis from "lenis";
+import { MotionConfig, motion } from "framer-motion";
 
-// Professional 3D Darvozalar va Fizikali UCL To'pi
-function UCLStadiumField({ onGoal }: { onGoal: (side: "chap" | "ong") => void }) {
-  const ballRef = useRef<HTMLDivElement>(null);
-  const size = 68;
+const css = `
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Manrope:wght@400;600;700&display=swap');
+:root{--bg:#06070c;--mute:#9aa0bd;--v:#7c5cff;--c:#22d3ee}
+.fd{font-family:'Bricolage Grotesque',system-ui,sans-serif}.fb{font-family:'Manrope',system-ui,sans-serif}
+a:focus-visible{outline:2px solid var(--c);outline-offset:4px;border-radius:12px}
+`;
 
+const scroll = { p: 0 };
+const glow = new THREE.Color("#22d3ee").multiplyScalar(3);
+
+function useSmoothScroll() {
   useEffect(() => {
-    let x = window.innerWidth / 2;
-    let y = window.innerHeight / 2;
-    let vx = (Math.random() > 0.5 ? 1 : -1) * (2.8 + Math.random() * 1.2);
-    let vy = (Math.random() > 0.5 ? 1 : -1) * (2.0 + Math.random() * 1.2);
-    let rotation = 0;
-    let animId: number;
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const lenis = reduce ? null : new Lenis({ lerp: 0.09 });
+    let id;
+    const raf = (t) => { lenis?.raf(t); id = requestAnimationFrame(raf); };
+    id = requestAnimationFrame(raf);
+    const on = () => { scroll.p = Math.min(1, scrollY / Math.max(1, innerHeight * 0.9)); };
+    addEventListener("scroll", on, { passive: true });
+    on();
+    return () => { cancelAnimationFrame(id); lenis?.destroy(); removeEventListener("scroll", on); };
+  }, []);
+}
 
-    const animate = () => {
-      x += vx;
-      y += vy;
-      rotation += (Math.abs(vx) + Math.abs(vy)) * 1.3;
+function Rig() {
+  useFrame((s, dt) => {
+    s.camera.position.x = THREE.MathUtils.damp(s.camera.position.x, s.pointer.x * 0.7, 3, dt);
+    s.camera.position.y = THREE.MathUtils.damp(s.camera.position.y, s.pointer.y * 0.45, 3, dt);
+    s.camera.lookAt(0, 0, 0);
+  });
+  return null;
+}
 
-      const W = window.innerWidth;
-      const H = window.innerHeight;
-
-      // Darvoza balandligi (ekran markazining 25% dan 75% gacha)
-      const goalTop = H * 0.25;
-      const goalBottom = H * 0.75;
-
-      // O'NG DARVOZA (GOL!)
-      if (x >= W - size - 12) {
-        if (y >= goalTop && y <= goalBottom) {
-          onGoal("ong");
-          x = W / 2;
-          y = H / 2;
-          vx = -3.2;
-          vy = (Math.random() - 0.5) * 3;
-        } else {
-          x = W - size - 12;
-          vx = -Math.abs(vx);
-        }
-      }
-
-      // CHAP DARVOZA (GOL!)
-      if (x <= 12) {
-        if (y >= goalTop && y <= goalBottom) {
-          onGoal("chap");
-          x = W / 2;
-          y = H / 2;
-          vx = 3.2;
-          vy = (Math.random() - 0.5) * 3;
-        } else {
-          x = 12;
-          vx = Math.abs(vx);
-        }
-      }
-
-      // Shift / Pol to'siqlari
-      if (y >= H - size - 10) {
-        y = H - size - 10;
-        vy = -Math.abs(vy);
-      } else if (y <= 10) {
-        y = 10;
-        vy = Math.abs(vy);
-      }
-
-      if (ballRef.current) {
-        ballRef.current.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${rotation}deg)`;
-      }
-
-      animId = requestAnimationFrame(animate);
-    };
-
-    animId = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(animId);
-  }, [onGoal]);
-
+function Gem({ label, r, speed, phase, color }) {
+  const ref = useRef();
+  useFrame(({ clock }) => {
+    const a = clock.elapsedTime * speed + phase;
+    ref.current.position.set(Math.cos(a) * r, Math.sin(a * 1.3) * 0.4, Math.sin(a) * r);
+    ref.current.rotation.y = a * 2;
+  });
   return (
-    <>
-      {/* Stadion markaziy doirasi (Maydon foni) */}
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-25">
-        <div className="size-[420px] sm:size-[560px] rounded-full border border-blue-400/20 shadow-[0_0_80px_rgba(59,130,246,0.1)] flex items-center justify-center">
-          <div className="size-2 rounded-full bg-blue-400/50" />
-        </div>
-        <div className="absolute h-full w-[1px] bg-gradient-to-b from-transparent via-blue-400/20 to-transparent" />
-      </div>
-
-      {/* CHAP DARVOZA (Stadion to'ri) */}
-      <div className="pointer-events-none fixed left-0 top-[25vh] h-[50vh] w-12 sm:w-16 z-0 flex items-center">
-        <div className="relative h-full w-full rounded-r-2xl border-y-2 border-r-4 border-blue-400/60 bg-gradient-to-r from-blue-600/20 via-blue-500/10 to-transparent backdrop-blur-[2px] shadow-[0_0_30px_rgba(59,130,246,0.3)] overflow-hidden">
-          {/* Darvoza to'ri chiziqlari */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.15)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.15)_1px,transparent_1px)] bg-[size:10px_10px]" />
-          <div className="absolute inset-y-0 right-0 w-1 bg-blue-300 shadow-[0_0_15px_#60a5fa]" />
-        </div>
-      </div>
-
-      {/* O'NG DARVOZA (Stadion to'ri) */}
-      <div className="pointer-events-none fixed right-0 top-[25vh] h-[50vh] w-12 sm:w-16 z-0 flex items-center justify-end">
-        <div className="relative h-full w-full rounded-l-2xl border-y-2 border-l-4 border-amber-400/60 bg-gradient-to-l from-amber-600/20 via-amber-500/10 to-transparent backdrop-blur-[2px] shadow-[0_0_30px_rgba(251,191,36,0.3)] overflow-hidden">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.15)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.15)_1px,transparent_1px)] bg-[size:10px_10px]" />
-          <div className="absolute inset-y-0 left-0 w-1 bg-amber-300 shadow-[0_0_15px_#fbbf24]" />
-        </div>
-      </div>
-
-      {/* UEFA Yulduzli To'pi */}
-      <div
-        ref={ballRef}
-        className="pointer-events-none fixed top-0 left-0 z-10 size-[56px] sm:size-[68px] select-none will-change-transform"
-      >
-        <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_10px_25px_rgba(0,0,0,0.8)] filter">
-          <defs>
-            <radialGradient id="ballShine" cx="30%" cy="30%" r="70%">
-              <stop offset="0%" stopColor="#ffffff" />
-              <stop offset="50%" stopColor="#e2e8f0" />
-              <stop offset="85%" stopColor="#94a3b8" />
-              <stop offset="100%" stopColor="#334155" />
-            </radialGradient>
-          </defs>
-          <circle cx="50" cy="50" r="47" fill="url(#ballShine)" stroke="#0f172a" strokeWidth="2.5" />
-          {/* UCL Yulduzlari */}
-          <g fill="#020617" stroke="#2563eb" strokeWidth="1.2">
-            <polygon points="50,26 54,40 68,40 57,49 61,63 50,54 39,63 43,49 32,40 46,40" />
-            <polygon points="24,12 28,22 39,22 30,29 33,39 24,33 15,39 18,29 9,22 20,22" />
-            <polygon points="76,12 80,22 91,22 82,29 85,39 76,33 67,39 70,29 61,22 72,22" />
-            <polygon points="78,62 82,72 93,72 84,79 87,89 78,83 69,89 72,79 63,72 74,72" />
-            <polygon points="22,62 26,72 37,72 28,79 31,89 22,83 13,89 16,79 7,72 18,72" />
-          </g>
-        </svg>
-      </div>
-    </>
+    <group ref={ref}>
+      <mesh>
+        <octahedronGeometry args={[0.22, 0]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} metalness={0.6} roughness={0.2} toneMapped={false} />
+      </mesh>
+      <Html position={[0, -0.5, 0]} center distanceFactor={8} zIndexRange={[5, 0]} style={{ pointerEvents: "none" }}>
+        <span className="fb whitespace-nowrap rounded-full border border-white/20 bg-black/40 px-3 py-1 text-sm font-bold text-white backdrop-blur">{label}</span>
+      </Html>
+    </group>
   );
 }
 
-export function Home() {
-  const fullText =
-    "Men Erkinov Ziyodullo, 2005-yil 29-iyunda Andijon viloyati Paxtaobod tumanida tug'ilganman.";
-
-  const [displayText, setDisplayText] = useState("");
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isClosed, setIsClosed] = useState(false);
-
-  // Hisob & Gol animatsiyasi
-  const [scores, setScores] = useState({ chap: 0, ong: 0 });
-  const [goalAlert, setGoalAlert] = useState<{ active: boolean; side: "chap" | "ong" | null }>({
-    active: false,
-    side: null,
+function Orb({ reduce }) {
+  const g = useRef();
+  useFrame((s, dt) => {
+    const wide = s.viewport.width > 7;
+    const t = scroll.p;
+    const tx = wide ? 2.5 * (1 - t) : 0;
+    const ty = (wide ? 0 : 1.7) * (1 - t) + t * 2.5;
+    g.current.position.x = THREE.MathUtils.damp(g.current.position.x, tx, 3, dt);
+    g.current.position.y = THREE.MathUtils.damp(g.current.position.y, ty, 3, dt);
+    const sc = THREE.MathUtils.damp(g.current.scale.x, (wide ? 1 : 0.7) * (1 - t * 0.45), 3, dt);
+    g.current.scale.setScalar(sc);
+    g.current.rotation.y += dt * 0.25 + t * dt;
   });
+  return (
+    <group ref={g}>
+      <Float speed={reduce ? 0 : 1.5} rotationIntensity={0.5} floatIntensity={1}>
+        <mesh>
+          <sphereGeometry args={[1.5, 128, 128]} />
+          <MeshDistortMaterial color="#6d4aff" roughness={0.08} metalness={0.9} distort={reduce ? 0 : 0.35} speed={1.6} iridescence={1} clearcoat={1} envMapIntensity={1.6} />
+        </mesh>
+      </Float>
+      <mesh rotation={[Math.PI / 2.4, 0, 0.3]}>
+        <torusGeometry args={[2.35, 0.012, 16, 220]} />
+        <meshBasicMaterial color={glow} toneMapped={false} />
+      </mesh>
+      <mesh rotation={[Math.PI / 1.8, 0.4, 0]}>
+        <torusGeometry args={[2.9, 0.008, 16, 220]} />
+        <meshBasicMaterial color="#7c5cff" toneMapped={false} />
+      </mesh>
+      <group rotation={[0.4, 0, 0.25]}>
+        <Gem label="React" r={2.35} speed={0.5} phase={0} color="#22d3ee" />
+        <Gem label="Django" r={2.35} speed={0.5} phase={2.1} color="#34d399" />
+        <Gem label="Kali" r={2.35} speed={0.5} phase={4.2} color="#a78bfa" />
+      </group>
+    </group>
+  );
+}
 
-  // Parallax Gyroskopik 3D harakat
-  const mouseX = useMotionValue(0.5);
-  const mouseY = useMotionValue(0.5);
+function Scene({ reduce }) {
+  return (
+    <Canvas dpr={[1, 1.75]} camera={{ position: [0, 0, 7.5], fov: 42 }} gl={{ powerPreference: "high-performance" }} eventSource={document.body} eventPrefix="client">
+      <color attach="background" args={["#06070c"]} />
+      <ambientLight intensity={0.25} />
+      <Suspense fallback={null}>
+        <Environment resolution={256} frames={1}>
+          <Lightformer form="rect" intensity={4} position={[-4, 3, -3]} scale={[8, 4, 1]} color="#7c5cff" />
+          <Lightformer form="rect" intensity={4} position={[5, -2, 2]} scale={[6, 3, 1]} color="#22d3ee" />
+          <Lightformer form="ring" intensity={3} position={[0, 4, 4]} scale={4} color="#ffffff" />
+        </Environment>
+        <Orb reduce={reduce} />
+        <Sparkles count={140} scale={[16, 9, 8]} size={2.5} speed={reduce ? 0 : 0.4} color="#a5b4ff" />
+      </Suspense>
+      <Rig />
+      <EffectComposer multisampling={0}>
+        <Bloom intensity={1.1} luminanceThreshold={0.9} mipmapBlur />
+        <Vignette offset={0.25} darkness={0.85} />
+      </EffectComposer>
+    </Canvas>
+  );
+}
 
-  const rotateX = useSpring(useTransform(mouseY, [0, 1], [8, -8]), { stiffness: 200, damping: 25 });
-  const rotateY = useSpring(useTransform(mouseX, [0, 1], [-10, 10]), { stiffness: 200, damping: 25 });
+function Nav() {
+  return (
+    <nav aria-label="Asosiy" className="fb fixed left-1/2 top-4 z-30 flex -translate-x-1/2 gap-1 rounded-full border border-white/10 bg-white/[0.06] p-1 backdrop-blur-xl">
+      <span className="rounded-full bg-white/15 px-4 py-2 text-sm font-semibold">Bosh sahifa</span>
+      <Link to="/news" className="rounded-full px-4 py-2 text-sm font-semibold text-[var(--mute)] transition-colors hover:text-white">Yangiliklar</Link>
+    </nav>
+  );
+}
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    mouseX.set((e.clientX - rect.left) / rect.width);
-    mouseY.set((e.clientY - rect.top) / rect.height);
-  };
+const Line = ({ children, delay = 0, className = "" }) => (
+  <span className="block overflow-hidden pb-[0.1em]">
+    <motion.span className={`block ${className}`} initial={{ y: "110%" }} animate={{ y: 0 }} transition={{ duration: 0.9, delay, ease: [0.2, 0.8, 0.2, 1] }}>
+      {children}
+    </motion.span>
+  </span>
+);
 
-  const handleMouseLeave = () => {
-    mouseX.set(0.5);
-    mouseY.set(0.5);
-  };
+const reveal = { initial: { opacity: 0, y: 40 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, margin: "-80px" }, transition: { duration: 0.7 } };
+const card = "block h-full rounded-3xl border border-white/10 bg-white/[0.05] p-6 backdrop-blur-md transition-colors hover:border-[var(--c)]/60 hover:bg-white/[0.09]";
+const link = "mt-5 inline-block font-bold text-[var(--c)] underline decoration-2 underline-offset-[6px]";
 
-  // Harfma-harf yozilish
-  useEffect(() => {
-    if (currentIndex < fullText.length) {
-      const timeout = setTimeout(() => {
-        setDisplayText((prev) => prev + fullText[currentIndex]);
-        setCurrentIndex((prev) => prev + 1);
-      }, 35);
-      return () => clearTimeout(timeout);
-    } else {
-      const closeTimer = setTimeout(() => {
-        setIsClosed(true);
-      }, 1200);
-      return () => clearTimeout(closeTimer);
-    }
-  }, [currentIndex, fullText]);
-
-  // Gol sodir bo'lganda
-  const handleGoalDetected = useCallback((side: "chap" | "ong") => {
-    setScores((prev) => ({ ...prev, [side]: prev[side] + 1 }));
-    setGoalAlert({ active: true, side });
-
-    setTimeout(() => {
-      setGoalAlert({ active: false, side: null });
-    }, 1800);
-  }, []);
-
-  const handleReopen = () => {
-    setIsClosed(false);
-    setDisplayText("");
-    setCurrentIndex(0);
-  };
+export function Home() {
+  useSmoothScroll();
+  const reduce = typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   return (
-    <div
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      className="relative min-h-screen w-full bg-[#05070d] text-white flex flex-col items-center justify-center p-4 sm:p-8 antialiased selection:bg-amber-400 selection:text-black overflow-hidden font-sans"
-    >
-      {/* UCL Maydon va Darvozalar */}
-      <UCLStadiumField onGoal={handleGoalDetected} />
+    <MotionConfig reducedMotion="user">
+      <div className="fb relative min-h-screen w-full overflow-x-hidden bg-[var(--bg)] text-white antialiased selection:bg-[var(--v)]">
+        <style>{css}</style>
+        <div aria-hidden className="pointer-events-none fixed inset-0 z-0"><Scene reduce={reduce} /></div>
+        <Nav />
 
-      {/* Orqa fondagi UEFA tungi nurlari */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden z-0">
-        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[55rem] h-[35rem] bg-gradient-to-b from-blue-600/25 via-indigo-600/15 to-transparent blur-[140px] rounded-full" />
-        <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-[45rem] h-[25rem] bg-amber-600/10 blur-[130px] rounded-full" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,#1e293b15_0%,transparent_70%)]" />
-      </div>
-
-      {/* Kinematik "GOOOL!" Splash Screen */}
-      <AnimatePresence>
-        {goalAlert.active && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.3, filter: "blur(20px)" }}
-            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 z-50 flex flex-col items-center justify-center pointer-events-none select-none bg-blue-950/20 backdrop-blur-[2px]"
-          >
-            {/* Shok to'lqini (Shockwave) */}
-            <motion.div
-              initial={{ scale: 0.2, opacity: 0.8 }}
-              animate={{ scale: 2.5, opacity: 0 }}
-              transition={{ duration: 1.2, ease: "easeOut" }}
-              className={`absolute size-[350px] rounded-full border-4 ${
-                goalAlert.side === "chap" ? "border-blue-400" : "border-amber-400"
-              }`}
-            />
-            
-            <motion.span
-              animate={{ y: [-10, 10, -10] }}
-              transition={{ repeat: Infinity, duration: 0.4 }}
-              className="text-7xl sm:text-9xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-100 to-amber-500 drop-shadow-[0_0_50px_rgba(251,191,36,0.8)]"
-            >
-              GOOOOL!
-            </motion.span>
-            
-            <span className="mt-2 text-sm sm:text-base font-mono uppercase tracking-[0.4em] text-cyan-300 font-bold drop-shadow">
-              UEFA Champions League • {goalAlert.side === "chap" ? "Chap Darvoza" : "O'ng Darvoza"}
-            </span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Tepadagi Boshqaruv & Live Scoreboard */}
-      <motion.header
-        initial={{ opacity: 0, y: -25 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7 }}
-        className="w-full max-w-2xl flex items-center justify-between mb-8 px-2 z-40"
-      >
-        {/* Hisob Tablosi (Match Scoreboard) */}
-        <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-900/60 px-4 py-2 backdrop-blur-xl shadow-2xl">
-          <Trophy className="size-4 text-amber-400" />
-          <div className="flex items-center gap-2 font-mono text-xs font-bold tracking-wider">
-            <span className="text-blue-400">BLUE {scores.chap}</span>
-            <span className="text-slate-600">:</span>
-            <span className="text-amber-400">{scores.ong} GOLD</span>
-          </div>
-        </div>
-
-        {/* Tugmalar */}
-        <div className="flex items-center gap-2">
-          {isClosed && (
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleReopen}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-xs font-semibold text-neutral-950 shadow-lg shadow-amber-500/20 transition-all"
-            >
-              <RotateCcw className="size-3.5" />
-              <span>Qayta ochish</span>
-            </motion.button>
-          )}
-
-          <Link
-            to="/news"
-            className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-slate-900/60 hover:bg-slate-800/80 px-4 py-2 text-xs font-medium text-slate-200 backdrop-blur-xl transition-all active:scale-95 shadow-lg"
-          >
-            <Newspaper className="size-3.5 text-blue-400" />
-            <span>Yangiliklar</span>
-          </Link>
-        </div>
-      </motion.header>
-
-      {/* 3D Interaktiv Daftar (Apple Moleskine Edition) */}
-      <motion.div
-        style={{ rotateX, rotateY, transformPerspective: 1400 }}
-        className="relative z-20 w-full max-w-xl transition-shadow duration-300"
-      >
-        {/* Chuqur 3D atrof soyasi */}
-        <div className="absolute -inset-3 bg-gradient-to-r from-blue-900/20 via-black/80 to-amber-900/20 blur-3xl -z-10 rounded-[35px] opacity-90" />
-
-        {/* Daftarning charm korpusi */}
-        <div className="relative w-full min-h-[440px] sm:min-h-[490px] rounded-[30px] bg-gradient-to-b from-[#10141f] via-[#0a0d14] to-[#05070a] p-3 sm:p-4 border border-white/10 shadow-[0_30px_90px_rgba(0,0,0,0.9)] overflow-hidden">
-          
-          {/* Ichki Oq Qog'oz (Ochiq paytda) */}
-          <div className="relative z-10 w-full h-full min-h-[410px] sm:min-h-[460px] rounded-2xl bg-[#faf7ef] shadow-[inset_0_0_40px_rgba(200,175,130,0.3)] border border-[#e5dcce] p-6 sm:p-9 flex flex-col justify-between overflow-hidden">
-            
-            {/* Qizil hoshiya va nozik chiziqlar */}
-            <div className="absolute top-0 bottom-0 left-10 sm:left-14 w-[1.5px] bg-red-400/60 pointer-events-none" />
-            <div
-              className="absolute inset-0 pl-12 sm:pl-16 pr-6 pt-14 pointer-events-none"
-              style={{
-                backgroundImage:
-                  "repeating-linear-gradient(transparent, transparent 35px, rgba(37, 99, 235, 0.12) 35px, rgba(37, 99, 235, 0.12) 36px)",
-              }}
-            />
-
-            {/* Tepasi: Sana va Hudud */}
-            <div className="relative z-10 flex justify-between items-center pl-6 sm:pl-10 pb-3 border-b border-[#ebdcc7]">
-              <span className="text-[11px] font-mono tracking-wider text-[#8c7a65] uppercase font-semibold">
-                Andijon • Paxtaobod
-              </span>
-              <span className="font-mono text-xs text-[#8c7a65] font-bold bg-[#f1e6d7] px-2.5 py-0.5 rounded-md shadow-sm">
-                2005.06.29
-              </span>
+        <main className="relative z-10 mx-auto w-full max-w-6xl px-6">
+          <section className="flex min-h-screen items-center pt-20">
+            <div className="max-w-xl">
+              <h1 className="fd text-6xl font-extrabold leading-[0.95] tracking-tight sm:text-8xl">
+                <Line>Erkinov</Line>
+                <Line delay={0.12} className="bg-gradient-to-r from-white via-cyan-300 to-violet-400 bg-clip-text text-transparent">Ziyodullo</Line>
+              </h1>
+              <motion.p initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9, duration: 0.6 }} className="mt-8 max-w-md text-lg leading-relaxed text-[var(--mute)]">
+                Shaxsiy sahifam. Dasturlashda o'rgangan narsalarim va loyihalarim shu yerda. Sichqonchani siljiting va pastga aylantiring.
+              </motion.p>
             </div>
+          </section>
 
-            {/* Qo'lda yozilayotgan matn & Tilla Uchar Pero */}
-            <div className="relative z-10 pl-6 sm:pl-10 my-auto py-4">
-              <p className="relative font-serif italic text-2xl sm:text-3xl text-[#16274a] font-medium leading-[38px] sm:leading-[46px] tracking-wide select-none">
-                {displayText}
-                {!isClosed && currentIndex < fullText.length && (
-                  <motion.span
-                    animate={{ rotate: [10, 24, 10], y: [-2, 2, -2] }}
-                    transition={{ repeat: Infinity, duration: 0.35 }}
-                    className="inline-block relative text-3xl ml-1.5 -translate-y-2 pointer-events-none filter drop-shadow"
-                  >
-                    ✒️
-                  </motion.span>
-                )}
-              </p>
-            </div>
+          <motion.section {...reveal} className="py-24">
+            <p className="fd max-w-3xl text-3xl font-bold leading-snug sm:text-5xl">
+              Paxtaobod, Andijondan dasturchiman. Interfeyslarni React bilan, serverni Django bilan yozaman, xavfsizlikni Kali Linux'da o'rganaman.
+            </p>
+          </motion.section>
 
-            {/* Pastki qism: Imzo */}
-            <div className="relative z-10 flex items-center justify-between pl-6 sm:pl-10 pt-3 border-t border-[#ebdcc7] text-xs font-serif text-[#9b8872]">
-              <span className="font-mono text-[11px] text-[#a59178]">Holat: Tasdiqlangan</span>
-              <span className="italic font-bold text-[#16274a] text-sm">Ziyodullo Erkinov</span>
-            </div>
-          </div>
-
-          {/* 3D Yopiluvchi Royal Muqova */}
-          <motion.div
-            initial={{ rotateY: 180, opacity: 0 }}
-            animate={{
-              rotateY: isClosed ? 0 : 180,
-              opacity: isClosed ? 1 : 0,
-            }}
-            transition={{
-              duration: 1.0,
-              type: "spring",
-              damping: 14,
-              stiffness: 85,
-            }}
-            style={{ transformOrigin: "left center" }}
-            onClick={handleReopen}
-            className={`absolute inset-0 z-30 rounded-[30px] bg-gradient-to-br from-[#162238] via-[#0d1524] to-[#04070e] border-2 border-amber-500/40 shadow-[0_30px_70px_rgba(0,0,0,0.95)] flex flex-col justify-between p-7 sm:p-10 cursor-pointer ${
-              isClosed ? "pointer-events-auto" : "pointer-events-none"
-            }`}
-          >
-            {/* Oltin xatcho'p tasmasi */}
-            <motion.div
-              animate={{ y: [0, 4, 0] }}
-              transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
-              className="absolute top-0 right-10 w-4 h-12 bg-gradient-to-b from-amber-500 to-amber-700 rounded-b-md shadow-lg border-x border-amber-300"
-            />
-
-            <div className="flex justify-between items-center text-xs font-mono uppercase tracking-widest text-amber-200/70">
-              <span className="border-b border-amber-500/40 pb-0.5">Shaxsiy Tarix</span>
-              <span>№ 01</span>
-            </div>
-
-            {/* Gerb va Nom */}
-            <div className="my-auto text-center py-6 border-y border-amber-500/20 bg-amber-400/[0.02] rounded-2xl backdrop-blur-sm">
-              <motion.div
-                whileHover={{ scale: 1.1, rotate: 5 }}
-                className="size-16 mx-auto mb-4 rounded-full border-2 border-amber-400/60 bg-gradient-to-tr from-amber-600/30 to-amber-400/10 flex items-center justify-center text-amber-300 font-serif font-extrabold text-3xl shadow-[0_0_30px_rgba(251,191,36,0.3)]"
-              >
-                E
+          <section className="grid gap-5 pb-24 md:grid-cols-3">
+            {[
+              { t: "Yangiliklar", d: "E'lonlar va yangi yozuvlar shu yerda chiqadi.", to: "/news", c: "Ochish" },
+              { t: "Telegram", d: "Savol, taklif yoki hamkorlik bo'lsa, yozing.", href: "https://t.me/erkinovziyodullo", c: "t.me/erkinovziyodullo" },
+              { t: "Manzil", d: "Paxtaobod, Andijon, O'zbekiston." },
+            ].map((x, i) => (
+              <motion.div key={x.t} {...reveal} transition={{ duration: 0.7, delay: i * 0.1 }}>
+                <div className={card}>
+                  <h2 className="fd text-2xl font-extrabold">{x.t}</h2>
+                  <p className="mt-2 leading-relaxed text-[var(--mute)]">{x.d}</p>
+                  {x.to && <Link to={x.to} className={link}>{x.c}</Link>}
+                  {x.href && <a href={x.href} target="_blank" rel="noopener noreferrer" className={link}>{x.c}</a>}
+                </div>
               </motion.div>
-              <h2 className="text-2xl sm:text-4xl font-serif tracking-widest uppercase font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-100 via-amber-200 to-amber-400 drop-shadow">
-                Erkinov Ziyodullo
-              </h2>
-              <p className="mt-2.5 text-xs font-mono tracking-widest text-amber-300/80">
-                29.06.2005 • PAXTAOBOD TUMANI
-              </p>
-            </div>
+            ))}
+          </section>
 
-            <div className="text-center text-xs font-mono text-slate-400 animate-pulse">
-              Daftarni ochish uchun bosing ✨
-            </div>
-          </motion.div>
-
-        </div>
-      </motion.div>
-    </div>
+          <footer className="flex flex-wrap justify-between gap-2 border-t border-white/10 py-6 text-sm text-[var(--mute)]">
+            <span>© 2026 Erkinov Ziyodullo</span>
+            <span>Andijon, Paxtaobod</span>
+          </footer>
+        </main>
+      </div>
+    </MotionConfig>
   );
 }
