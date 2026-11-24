@@ -1,385 +1,349 @@
-
-import { Suspense, useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { Float } from "@react-three/drei";
-import { motion, MotionConfig } from "framer-motion";
-import {
-  ArrowDown,
-  ArrowRight,
-  Github,
-  Send,
-} from "lucide-react";
-import type { Mesh } from "three";
+import { ArrowUpRight, Moon, Sun } from "lucide-react";
 
 // ================================
-// 3D ANIMATSIYA
+// MA'LUMOTLAR (shu yerdan o‘zgartirasiz)
 // ================================
 
-function AnimatedOrb() {
-  const ref = useRef<Mesh>(null);
+const PROFILE = {
+  birthDate: new Date(2005, 5, 29), // 29.06.2005
+  phone: "+998950571017",
+  phoneView: "+998 95 057 10 17",
+  telegram: "https://t.me/",
+  github: "https://github.com/",
+  mainProject: "https://erkinov-ziyodullo.uz/",
+};
 
-  useFrame((_, delta) => {
-    if (!ref.current) return;
+const SKILLS = [
+  { title: "React", text: "Zamonaviy va tez veb-interfeyslar." },
+  { title: "Django", text: "Server qismi, API va ma’lumotlar bazasi." },
+  { title: "Flutter", text: "Android va iOS uchun mobil ilovalar." },
+];
 
-    ref.current.rotation.y += delta * 0.15;
-    ref.current.rotation.x += delta * 0.08;
-  });
+const LANGUAGES = ["Python", "JavaScript", "TypeScript", "Dart"];
 
-  return (
-    <Float
-      speed={1}
-      rotationIntensity={0.12}
-      floatIntensity={0.25}
-    >
-      <mesh ref={ref}>
-        <icosahedronGeometry args={[1.15, 2]} />
+type Theme = "light" | "dark";
 
-        <meshStandardMaterial
-          color="#8b5cf6"
-          roughness={0.35}
-          metalness={0.3}
-          wireframe
-        />
-      </mesh>
-    </Float>
-  );
+function getAge(birth: Date) {
+  const now = new Date();
+  let age = now.getFullYear() - birth.getFullYear();
+  const had =
+    now.getMonth() > birth.getMonth() ||
+    (now.getMonth() === birth.getMonth() && now.getDate() >= birth.getDate());
+  return had ? age : age - 1;
 }
 
-function Scene() {
-  return (
-    <Canvas
-      camera={{ position: [0, 0, 4.5], fov: 45 }}
-      dpr={[1, 1.5]}
-      gl={{
-        antialias: false,
-        powerPreference: "low-power",
-      }}
-    >
-      <ambientLight intensity={1.4} />
-
-      <pointLight
-        position={[3, 3, 3]}
-        intensity={2}
-        color="#a78bfa"
-      />
-
-      <Suspense fallback={null}>
-        <AnimatedOrb />
-      </Suspense>
-    </Canvas>
-  );
+function getInitialTheme(): Theme {
+  try {
+    const saved = localStorage.getItem("theme");
+    if (saved === "light" || saved === "dark") return saved;
+  } catch {
+    /* localStorage mavjud emas */
+  }
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
 }
 
 // ================================
-// ANIMATSIYA SOZLAMASI
+// STILLAR (zp- prefiksi Tailwind bilan to‘qnashmaydi)
 // ================================
 
-function useReducedMotionPreference() {
-  const [reduced, setReduced] = useState(false);
+const CSS = `
+html { scroll-behavior: smooth; scroll-padding-top: 76px; }
 
-  useEffect(() => {
-    const media = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    );
+.zp {
+  --bg: #fafafa; --surface: #ffffff; --text: #111114; --muted: #5b5b66;
+  --line: #e4e4ea; --accent: #2b50ff; --accent-text: #ffffff;
+  min-height: 100vh; background: var(--bg); color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.6; -webkit-font-smoothing: antialiased;
+  transition: background-color .25s, color .25s;
+}
+.zp[data-theme="dark"] {
+  --bg: #0b0b0f; --surface: #141419; --text: #f2f2f5; --muted: #9a9aa8;
+  --line: #25252e; --accent: #6c85ff; --accent-text: #0b0b0f;
+}
+.zp *, .zp *::before, .zp *::after { box-sizing: border-box; }
+.zp h1, .zp h2, .zp h3, .zp p { margin: 0; }
+.zp a { color: inherit; text-decoration: none; }
+.zp :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
 
-    const update = () => setReduced(media.matches);
+.zp-wrap { width: min(100% - 2rem, 960px); margin-inline: auto; }
 
-    update();
-    media.addEventListener?.("change", update);
+.zp-header {
+  position: sticky; top: 0; z-index: 10;
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+.zp-bar { display: flex; align-items: center; justify-content: space-between; height: 64px; gap: 1rem; }
+.zp-logo { font-weight: 800; font-size: 1.1rem; letter-spacing: -.02em; }
+.zp-logo span { color: var(--accent); }
+.zp-nav { display: flex; align-items: center; gap: 1.4rem; font-size: .95rem; color: var(--muted); }
+.zp-nav a:hover { color: var(--text); }
+.zp-theme {
+  width: 40px; height: 40px; border-radius: 50%; padding: 0;
+  border: 1px solid var(--line); background: var(--surface); color: var(--text);
+  display: grid; place-items: center; cursor: pointer; transition: border-color .2s;
+}
+.zp-theme:hover { border-color: var(--accent); }
 
-    return () => {
-      media.removeEventListener?.("change", update);
-    };
-  }, []);
+.zp-section { padding: 4.5rem 0; }
+.zp h1, .zp h2, .zp h3 { letter-spacing: -.03em; line-height: 1.1; }
+.zp h2 { font-size: clamp(1.6rem, 4vw, 2.2rem); margin-bottom: 1.5rem; }
+.zp-lead { color: var(--muted); font-size: clamp(1.05rem, 2.4vw, 1.25rem); max-width: 34rem; }
 
-  return reduced;
+.zp-hero { padding: clamp(3.5rem, 12vw, 7rem) 0 3rem; }
+.zp-hero h1 { font-size: clamp(2.6rem, 9vw, 5rem); font-weight: 800; margin-bottom: 1.2rem; }
+.zp-hero em { font-style: normal; color: var(--accent); }
+.zp-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 2rem; }
+.zp-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  min-height: 48px; padding: 0 1.4rem; border-radius: 999px;
+  font-weight: 600; font-size: .95rem; border: 1px solid var(--line);
+  background: var(--surface); transition: transform .15s, border-color .2s, filter .2s;
+}
+.zp-btn:hover { border-color: var(--accent); }
+.zp-btn:active { transform: scale(.97); }
+.zp-btn.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+.zp-btn.primary:hover { filter: brightness(1.08); }
+
+.zp-about p { color: var(--muted); max-width: 40rem; font-size: 1.05rem; }
+.zp-about p + p { margin-top: 1rem; }
+
+.zp-grid { display: grid; gap: 1rem; grid-template-columns: repeat(3, 1fr); }
+.zp-card {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 18px; padding: 1.5rem; transition: border-color .2s, transform .2s;
+}
+.zp-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.zp-card h3 { font-size: 1.3rem; margin-bottom: .4rem; }
+.zp-card p { color: var(--muted); font-size: .95rem; }
+.zp-chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+.zp-chip {
+  padding: .35rem .9rem; border-radius: 999px; font-size: .88rem;
+  border: 1px solid var(--line); background: var(--surface); color: var(--muted);
 }
 
+.zp-project {
+  display: flex; align-items: center; justify-content: space-between; gap: 1.5rem;
+  background: var(--accent); color: var(--accent-text);
+  border-radius: 26px; padding: clamp(1.5rem, 5vw, 2.8rem);
+  transition: filter .2s, transform .2s;
+}
+.zp-project:hover { filter: brightness(1.07); transform: translateY(-2px); }
+.zp-project small { opacity: .8; font-size: .95rem; }
+.zp-project strong {
+  display: block; font-size: clamp(1.4rem, 5vw, 2.4rem); letter-spacing: -.03em;
+  line-height: 1.15; margin: .3rem 0; word-break: break-word;
+}
+.zp-arrow {
+  flex-shrink: 0; width: 56px; height: 56px; border-radius: 50%;
+  background: var(--accent-text); color: var(--accent);
+  display: grid; place-items: center; transition: transform .25s;
+}
+.zp-project:hover .zp-arrow { transform: rotate(45deg); }
+
+.zp-phone { display: inline-block; font-size: clamp(1.8rem, 7vw, 3rem); font-weight: 800; letter-spacing: -.03em; }
+.zp-phone:hover { color: var(--accent); }
+
+.zp-footer { border-top: 1px solid var(--line); padding: 1.8rem 0; color: var(--muted); font-size: .9rem; }
+.zp-footer .zp-wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem; }
+
+@media (max-width: 720px) {
+  .zp-section { padding: 3rem 0; }
+  .zp-grid { grid-template-columns: 1fr; }
+  .zp-nav { gap: 1rem; font-size: .9rem; }
+  .zp-hide-sm { display: none; }
+  .zp-btn { flex: 1 1 100%; }
+  .zp-project { flex-direction: column; align-items: flex-start; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .zp * { transition: none !important; }
+}
+`;
+
 // ================================
-// ASOSIY SAHIFA
+// SAHIFA
 // ================================
 
 export function Home() {
-  const reduceMotion = useReducedMotionPreference();
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
+  const age = getAge(PROFILE.birthDate);
 
-  const projects = [
-    {
-      title: "Portfolio",
-      description:
-        "Shaxsiy sahifa va loyihalar uchun zamonaviy web dizayn.",
-      tags: ["React", "Tailwind"],
-    },
-    {
-      title: "Web interfeys",
-      description:
-        "Sodda, qulay va turli ekranlarga mos interfeyslar.",
-      tags: ["TypeScript", "CSS"],
-    },
-    {
-      title: "Cybersecurity",
-      description:
-        "Tarmoq va axborot xavfsizligini amaliy o‘rganish.",
-      tags: ["Linux", "Security"],
-    },
-  ];
+  useLayoutEffect(() => {
+    try {
+      localStorage.setItem("theme", theme);
+    } catch {
+      /* e'tibor bermaymiz */
+    }
+  }, [theme]);
+
+  useEffect(() => {
+    document.title = "Erkinov Ziyodullo — dasturchi";
+  }, []);
+
+  const toggleTheme = () =>
+    setTheme((t) => (t === "dark" ? "light" : "dark"));
 
   return (
-    <MotionConfig reducedMotion="user">
-      <div className="min-h-screen overflow-x-hidden bg-[#08090d] text-white">
-        {/* Orqa fon */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none fixed inset-0 overflow-hidden"
-        >
-          <div className="absolute left-1/2 top-0 h-80 w-80 -translate-x-1/2 rounded-full bg-violet-600/15 blur-[100px]" />
+    <div className="zp" data-theme={theme}>
+      <style>{CSS}</style>
 
-          <div className="absolute bottom-0 right-0 h-72 w-72 rounded-full bg-cyan-500/[0.06] blur-[100px]" />
-        </div>
+      <header className="zp-header">
+        <div className="zp-wrap zp-bar">
+          <a className="zp-logo" href="#top">
+            Ziyodullo<span>.</span>
+          </a>
 
-        {/* Navigatsiya */}
-        <header className="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-6 sm:pt-5">
-          <nav className="mx-auto flex max-w-5xl items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#08090d]/85 px-4 py-3 backdrop-blur-xl sm:px-6">
-            <Link
-              to="/"
-              className="shrink-0 text-sm font-bold tracking-wide sm:text-base"
+          <nav className="zp-nav" aria-label="Asosiy menyu">
+            <a className="zp-hide-sm" href="#about">Men haqimda</a>
+            <a href="#skills">Ko‘nikmalar</a>
+            <a href="#project">Loyiha</a>
+            <a href="#contact">Aloqa</a>
+            <Link className="zp-hide-sm" to="/news">Yangiliklar</Link>
+
+            <button
+              type="button"
+              className="zp-theme"
+              onClick={toggleTheme}
+              aria-label={
+                theme === "dark" ? "Yorug‘ rejimga o‘tish" : "Qorong‘i rejimga o‘tish"
+              }
             >
-              ZIYODULLO
-              <span className="text-violet-400">.</span>
-            </Link>
-
-            <div className="flex items-center gap-3 text-xs text-slate-300 sm:gap-7 sm:text-sm">
-              <a
-                href="#about"
-                className="transition hover:text-white"
-              >
-                Men haqimda
-              </a>
-
-              <a
-                href="#projects"
-                className="transition hover:text-white"
-              >
-                Loyihalar
-              </a>
-
-              <Link
-                to="/news"
-                className="transition hover:text-white"
-              >
-                Yangiliklar
-              </Link>
-            </div>
+              {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
           </nav>
-        </header>
+        </div>
+      </header>
 
-        <main className="relative z-10 mx-auto max-w-5xl px-4">
-          {/* HERO */}
-          <section className="relative grid min-h-[90svh] items-center gap-5 pb-16 pt-28 sm:px-4 sm:pt-32 md:grid-cols-2 md:gap-12">
-            <motion.div
-              initial={
-                reduceMotion ? false : { opacity: 0, y: 20 }
-              }
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <p className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-violet-400 sm:text-sm">
-                Salom, mening ismim
-              </p>
-
-              <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-                Erkinov
-                <br />
-                <span className="text-violet-400">
-                  Ziyodullo.
-                </span>
-              </h1>
-
-              <p className="mt-5 max-w-lg text-sm leading-7 text-slate-400 sm:text-base">
-                Web dasturlash, zamonaviy texnologiyalar va
-                kiberxavfsizlikka qiziqaman. Har kuni yangi
-                bilim va tajriba orttirishga intilaman.
-              </p>
-
-              <div className="mt-7 flex flex-wrap gap-3">
-                <a
-                  href="#projects"
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 py-3 text-sm font-medium transition hover:bg-violet-500"
-                >
-                  Loyihalarim
-                  <ArrowRight size={16} />
-                </a>
-
-                <Link
-                  to="/news"
-                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/15 px-5 py-3 text-sm transition hover:bg-white/5"
-                >
-                  Yangiliklar
-                </Link>
-              </div>
-
-              {/* Ijtimoiy tarmoqlar */}
-              <div className="mt-8 flex items-center gap-5">
-                <a
-                  href="https://github.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="GitHub"
-                  className="text-slate-400 transition hover:text-white"
-                >
-                  <Github size={20} />
-                </a>
-
-                <a
-                  href="https://t.me/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Telegram"
-                  className="text-slate-400 transition hover:text-white"
-                >
-                  <Send size={20} />
-                </a>
-              </div>
-            </motion.div>
-
-            {/* 3D obyekt */}
-            <motion.div
-              initial={
-                reduceMotion ? false : { opacity: 0, scale: 0.95 }
-              }
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.7 }}
-              className="relative mx-auto h-64 w-full max-w-sm sm:h-80 md:h-[400px]"
-            >
-              <div
-                aria-hidden="true"
-                className="absolute inset-0 rounded-full bg-violet-600/10 blur-3xl"
-              />
-
-              <div className="relative h-full w-full">
-                <Scene />
-              </div>
-            </motion.div>
-
-            <a
-              href="#about"
-              aria-label="Men haqimda bo‘limiga o‘tish"
-              className="absolute bottom-6 left-1/2 hidden -translate-x-1/2 text-slate-500 transition hover:text-white md:block"
-            >
-              <ArrowDown size={20} />
-            </a>
-          </section>
-
-          {/* MEN HAQIMDA */}
-          <section
-            id="about"
-            className="scroll-mt-28 py-16 sm:py-24"
-          >
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-400">
-              Men haqimda
+      <main id="top">
+        {/* Hero */}
+        <section className="zp-section zp-hero">
+          <div className="zp-wrap">
+            <h1>
+              Salom, men <em>Ziyodullo</em>.
+              <br />
+              Dasturchiman.
+            </h1>
+            <p className="zp-lead">
+              {age} yoshdaman. React, Django va Flutter bilan veb-saytlar va
+              mobil ilovalar yarataman.
             </p>
-
-            <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
-              Oddiylik. Izlanish. Rivojlanish.
-            </h2>
-
-            <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-400 sm:text-base">
-              Men texnologiyalarni amaliy loyihalar orqali
-              o‘rganaman. Maqsadim — foydali, tez ishlaydigan
-              va foydalanish uchun qulay raqamli mahsulotlar
-              yaratish.
-            </p>
-          </section>
-
-          {/* LOYIHALAR */}
-          <section
-            id="projects"
-            className="scroll-mt-28 py-12 sm:py-20"
-          >
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-400">
-              Ishlarim
-            </p>
-
-            <h2 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
-              Loyihalar
-            </h2>
-
-            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {projects.map((project, index) => (
-                <motion.article
-                  key={project.title}
-                  initial={
-                    reduceMotion
-                      ? false
-                      : { opacity: 0, y: 12 }
-                  }
-                  whileInView={
-                    reduceMotion
-                      ? undefined
-                      : { opacity: 1, y: 0 }
-                  }
-                  viewport={{ once: true, amount: 0.2 }}
-                  transition={{
-                    duration: 0.4,
-                    delay: index * 0.08,
-                  }}
-                  className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition hover:border-violet-400/30"
-                >
-                  <h3 className="text-lg font-semibold">
-                    {project.title}
-                  </h3>
-
-                  <p className="mt-3 text-sm leading-6 text-slate-400">
-                    {project.description}
-                  </p>
-
-                  <div className="mt-5 flex flex-wrap gap-2">
-                    {project.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="rounded-lg bg-white/[0.06] px-2.5 py-1 text-xs text-slate-300"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </motion.article>
-              ))}
-            </div>
-          </section>
-
-          {/* ALOQA */}
-          <section className="py-12 sm:py-16">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-8">
-              <h2 className="text-xl font-bold sm:text-2xl">
-                Aloqada bo‘lamiz
-              </h2>
-
-              <p className="mt-3 text-sm leading-6 text-slate-400 sm:text-base">
-                Taklif yoki hamkorlik bo‘yicha men bilan
-                bog‘lanishingiz mumkin.
-              </p>
-
+            <div className="zp-actions">
               <a
-                href="https://t.me/"
+                className="zp-btn primary"
+                href={PROFILE.mainProject}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 py-3 text-sm font-medium transition hover:bg-violet-500"
               >
-                <Send size={16} />
-                Telegram orqali bog‘lanish
+                Asosiy loyihani ochish
+              </a>
+              <a className="zp-btn" href={`tel:${PROFILE.phone}`}>
+                Qo‘ng‘iroq qilish
               </a>
             </div>
-          </section>
+          </div>
+        </section>
 
-          {/* FOOTER */}
-          <footer className="mt-8 border-t border-white/10 py-7 text-center text-xs text-slate-500 sm:text-sm">
-            © {new Date().getFullYear()} Erkinov Ziyodullo.
-            Barcha huquqlar himoyalangan.
-          </footer>
-        </main>
-      </div>
-    </MotionConfig>
+        {/* Men haqimda */}
+        <section id="about" className="zp-section zp-about">
+          <div className="zp-wrap">
+            <h2>Men haqimda</h2>
+            <p>
+              Ismim Erkinov Ziyodullo, 2005-yil 29-iyunda tug‘ilganman.
+              Dasturlashni amaliy loyihalar orqali o‘rganaman: har bir yangi
+              g‘oya — yangi tajriba.
+            </p>
+            <p>
+              Maqsadim — tez ishlaydigan, qulay va odamlarga haqiqatan foydali
+              mahsulotlar yaratish.
+            </p>
+          </div>
+        </section>
+
+        {/* Ko'nikmalar */}
+        <section id="skills" className="zp-section">
+          <div className="zp-wrap">
+            <h2>Ko‘nikmalar</h2>
+            <div className="zp-grid">
+              {SKILLS.map((s) => (
+                <article key={s.title} className="zp-card">
+                  <h3>{s.title}</h3>
+                  <p>{s.text}</p>
+                </article>
+              ))}
+            </div>
+            <div className="zp-chips" aria-label="Dasturlash tillari">
+              {LANGUAGES.map((l) => (
+                <span key={l} className="zp-chip">{l}</span>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Asosiy loyiha */}
+        <section id="project" className="zp-section">
+          <div className="zp-wrap">
+            <h2>Asosiy loyiham</h2>
+            <a
+              className="zp-project"
+              href={PROFILE.mainProject}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Asosiy loyiha saytini ochish"
+            >
+              <div>
+                <small>Bosing va saytga kiring</small>
+                <strong>erkinov-ziyodullo.uz</strong>
+              </div>
+              <span className="zp-arrow" aria-hidden="true">
+                <ArrowUpRight size={24} />
+              </span>
+            </a>
+          </div>
+        </section>
+
+        {/* Aloqa */}
+        <section id="contact" className="zp-section">
+          <div className="zp-wrap">
+            <h2>Aloqa</h2>
+            <a className="zp-phone" href={`tel:${PROFILE.phone}`}>
+              {PROFILE.phoneView}
+            </a>
+            <div className="zp-actions">
+              <a
+                className="zp-btn"
+                href={PROFILE.telegram}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Telegram
+              </a>
+              <a
+                className="zp-btn"
+                href={PROFILE.github}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                GitHub
+              </a>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="zp-footer">
+        <div className="zp-wrap">
+          <span>© {new Date().getFullYear()} Erkinov Ziyodullo</span>
+          <span>Barcha huquqlar himoyalangan</span>
+        </div>
+      </footer>
+    </div>
   );
 }
 
